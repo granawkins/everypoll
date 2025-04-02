@@ -1,0 +1,230 @@
+# EveryPoll Development Roadmap
+
+This roadmap outlines the step-by-step development process for building the EveryPoll application. Each step represents one PR that implements specific features with testable functionality at each stage.
+
+The roadmap is divided into two phases:
+1. Backend Development (PRs 1-6)
+2. Frontend Development (PRs 7-13)
+
+## Backend Development
+
+### PR 1: Database Setup
+
+**Summary:** Set up the SQLite database with all required tables and a migrations system.
+
+**Tasks:**
+- Add SQLite as a dependency
+- Create database initialization script that builds the DB if not found
+- Define all tables (Users, Polls, Answers, Votes) in the initialization script
+- Implement a migrations system for future schema changes
+- Create a testing database setup that reinitializes for tests
+
+**Tests:**
+- Database should be created automatically when app initializes
+- All tables should be created with correct schemas
+- Migration system should apply migrations in order
+- Test database should reset between test runs
+- Basic CRUD operations should work on all tables
+
+### PR 2: Authentication System
+
+**Summary:** Implement user authentication with Google OAuth and session management.
+
+**Tasks:**
+- Create API routes for authentication (/api/auth/*)
+- Implement session cookie management
+- Create anonymous user when no cookie is present
+- Return user object when valid cookie is provided
+- Add Google OAuth integration
+- Implement middleware for protected routes
+
+**Tests:**
+- `/api/auth/me` should return anonymous user if no cookie
+- `/api/auth/me` should return user object if valid cookie
+- `/api/auth/login` should redirect to Google login
+- `/api/auth/google-callback` should verify Google login and update user
+- `/api/auth/logout` should clear session cookie
+- Protected routes should reject unauthenticated requests
+
+### PR 3: Poll Creation and Viewing
+
+**Summary:** Implement API endpoints for creating and viewing polls.
+
+**Tasks:**
+- Create endpoint to add polls and answers to database
+- Implement validation for poll creation (2-10 answers)
+- Create endpoint to get poll details by ID
+- Include author information in poll responses
+- Ensure polls can only be created by authenticated users
+
+**Tests:**
+- POST to create poll should validate and store poll with answers
+- GET poll by ID should return complete poll with answers and author info
+- Non-authenticated users should not be able to create polls
+- Invalid polls (too few/many options) should be rejected
+
+### PR 4: Voting System
+
+**Summary:** Add the ability for users to vote on polls and retrieve voting statistics.
+
+**Tasks:**
+- Create endpoint for recording votes
+- Update poll retrieval endpoint to include vote counts
+- Add logic to check if user has already voted
+- Ensure votes can only be cast by authenticated users
+
+**Tests:**
+- POST to vote should record vote in database
+- GET poll should include vote counts for each answer
+- Users should not be able to vote twice on the same poll
+- Non-authenticated users should not be able to vote
+- Vote counts should update correctly after new votes
+
+### PR 5: Cross-Reference Functionality
+
+**Summary:** Implement the backend for cross-referencing polls with other polls.
+
+**Tasks:**
+- Enhance poll retrieval endpoint to accept cross-reference parameters
+- Implement database queries to filter poll results by cross-referenced poll votes
+- Return segmented results based on cross-referenced poll answers
+
+**Tests:**
+- GET poll with cross-reference params should return filtered results
+- Results should segment correctly based on answers from cross-referenced poll
+- Multiple levels of cross-referencing should work (nested references)
+- Invalid cross-reference parameters should return appropriate errors
+
+### PR 6: Feed and Search Routes
+
+**Summary:** Create endpoints for the poll feed and search functionality.
+
+**Tasks:**
+- Implement paginated feed endpoint
+- Add search functionality to feed endpoint
+- Create endpoint for searching polls to cross-reference
+- Include sorting options (newest first by default)
+
+**Tests:**
+- GET feed should return paginated list of polls
+- Feed should support pagination parameters
+- Search should return relevant results based on query
+- Cross-reference search should filter appropriately
+- Sorting should work as expected
+
+## Frontend Development
+
+### PR 7: Basic PollCard Component
+
+**Summary:** Create the core PollCard component with voting functionality.
+
+**Tasks:**
+- Create PollCard component to display poll question and answer options
+- Implement voting functionality that calls the appropriate API
+- Show column chart and vote count after voting
+- Style the component according to application design
+
+**Tests:**
+- PollCard should display question and answer buttons
+- Clicking vote should call API and update UI
+- After voting, column chart should display with percentages
+- Vote count should display correctly
+- User's selected answer should be highlighted
+
+### PR 8: Cross-Reference UI
+
+**Summary:** Enhance PollCard with cross-reference functionality.
+
+**Tasks:**
+- Add cross-reference search bar after voting
+- Implement selection of polls to cross-reference
+- Create sub-charts for cross-referenced results
+- Allow main chart to update when selecting different cross-reference segments
+- Display cross-reference text and selector below main question
+
+**Tests:**
+- Cross-reference search should appear after voting
+- Selecting a poll should load cross-referenced results
+- Sub-charts should display correctly for each answer option
+- Clicking on sub-charts should update the main chart
+- Cross-reference selector should work correctly
+
+### PR 9: Feed Implementation
+
+**Summary:** Create the landing page with an infinite scroll feed of polls.
+
+**Tasks:**
+- Implement landing page with feed of polls
+- Add infinite scroll functionality
+- Connect to feed API endpoint
+- Handle loading states and errors
+
+**Tests:**
+- Feed should load and display polls
+- Scrolling should load more polls
+- Each poll in feed should be interactive
+- Loading states should display appropriately
+
+### PR 10: Header Component
+
+**Summary:** Create the header with logo, search, and user controls.
+
+**Tasks:**
+- Create sticky header component
+- Add EveryPoll logo
+- Implement search bar that updates feed results
+- Add login button or user avatar based on login state
+
+**Tests:**
+- Header should stick to top of page
+- Search should update feed results
+- Login button should appear for logged-out users
+- Avatar should appear for logged-in users
+- Create poll button should be visible for logged-in users
+
+### PR 11: Poll Creation Screen
+
+**Summary:** Implement the interface for creating new polls.
+
+**Tasks:**
+- Create poll creation form with dynamic answer fields
+- Implement validation (2-10 answer options)
+- Connect to poll creation API
+- Add success/error feedback
+- Redirect to new poll after creation
+
+**Tests:**
+- Form should allow adding/removing answer options
+- Validation should prevent submission with too few/many answers
+- Successful creation should redirect to new poll
+- Errors should display appropriate messages
+
+### PR 12: User Profile (Non-Owner View)
+
+**Summary:** Create the public user profile view.
+
+**Tasks:**
+- Implement user profile page
+- Show user information (name, etc.)
+- Display feed of polls created by user
+
+**Tests:**
+- Profile should load user information
+- Created polls should display in feed
+- Pagination should work for polls feed
+
+### PR 13: User Profile (Owner View)
+
+**Summary:** Enhance user profile with owner-specific functionality.
+
+**Tasks:**
+- Add tabs for "Created" and "Voted" polls
+- Implement logout functionality
+- Show additional user information for the owner
+- Connect to appropriate API endpoints
+
+**Tests:**
+- Both tabs should display correct polls
+- Logout button should function correctly
+- Owner should see additional controls/information
+- Switching tabs should update displayed polls
