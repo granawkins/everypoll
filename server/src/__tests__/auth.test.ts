@@ -1,5 +1,6 @@
 import request from 'supertest';
 import { Request, Response, NextFunction } from 'express';
+import Database from 'better-sqlite3';
 import { app } from '../app';
 import { getRepositories } from '../database';
 import { initializeTestDatabase } from '../database/connection';
@@ -28,7 +29,7 @@ jest.mock('passport', () => {
 
 describe('Authentication Features', () => {
   // Hold reference to DB connection for proper cleanup
-  let db: any = null;
+  let db: Database.Database | null = null;
 
   beforeEach(() => {
     try {
