@@ -4,6 +4,7 @@ import path from 'path';
 import cookieParser from 'cookie-parser';
 import { getConnection } from './database';
 import authRoutes from './routes/auth';
+import pollsRoutes from './routes/polls';
 
 export const app = express();
 export const PORT = process.env.PORT || 5000;
@@ -52,6 +53,9 @@ app.get('/api', (req: Request, res: Response) => {
 
 // Auth routes
 app.use('/api/auth', authRoutes);
+
+// Polls routes
+app.use('/api/polls', pollsRoutes);
 
 // Serve React app (must be last route)
 app.get('*', (req: Request, res: Response) => {

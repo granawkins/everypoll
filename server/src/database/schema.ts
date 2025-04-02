@@ -13,6 +13,7 @@ export function createTables(db: Database.Database): void {
       id TEXT PRIMARY KEY,
       email TEXT UNIQUE,
       name TEXT UNIQUE,
+      google_id TEXT UNIQUE,
       created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
