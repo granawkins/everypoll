@@ -5,8 +5,7 @@ import { getRepositories } from '../database';
  * Create a new poll
  * Requires authentication
  */
-
-export async function createPoll(req: Request, res: Response): Promise<void> {
+export function createPoll(req: Request, res: Response) {
   try {
     const { question, answers } = req.body;
     const userId = req.user?.id;
@@ -52,11 +51,9 @@ export async function createPoll(req: Request, res: Response): Promise<void> {
         name: author.name,
       },
     });
-    return;
   } catch (error) {
     console.error('Error creating poll:', error);
     res.status(500).json({ error: 'Failed to create poll' });
-    return;
   }
 }
 
@@ -64,8 +61,7 @@ export async function createPoll(req: Request, res: Response): Promise<void> {
  * Get a poll by ID
  * Includes answers, author info, and vote counts if available
  */
-
-export async function getPollById(req: Request, res: Response): Promise<void> {
+export function getPollById(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
@@ -121,10 +117,8 @@ export async function getPollById(req: Request, res: Response): Promise<void> {
       userVote: userVote ? userVote.answer_id : null,
       hasVoted,
     });
-    return;
   } catch (error) {
     console.error('Error getting poll:', error);
     res.status(500).json({ error: 'Failed to retrieve poll' });
-    return;
   }
 }

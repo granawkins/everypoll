@@ -9,7 +9,6 @@ const router = express.Router();
  * Create a new poll
  * Requires authentication
  */
-// @ts-expect-error - Bypass TypeScript error for Express handler compatibility
 router.post('/', authenticate, requireAuth, createPoll);
 
 /**
@@ -17,7 +16,6 @@ router.post('/', authenticate, requireAuth, createPoll);
  * Get a poll by ID with its answers, author info, and vote counts
  * Authentication optional (to check if user has voted)
  */
-// @ts-expect-error - Bypass TypeScript error for Express handler compatibility
 router.get('/:id', authenticate, getPollById);
 
 export default router;
