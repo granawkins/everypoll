@@ -40,6 +40,11 @@ jest.mock('../../database', () => {
   const mockAnswers = [
     { id: 'answer1', poll_id: 'test-poll-id', text: 'Answer 1' },
     { id: 'answer2', poll_id: 'test-poll-id', text: 'Answer 2' },
+    {
+      id: 'already-voted',
+      poll_id: 'test-poll-id',
+      text: 'Answer for already voted test',
+    },
   ];
 
   const mockVote = {
