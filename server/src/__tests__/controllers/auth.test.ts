@@ -39,10 +39,7 @@ jest.mock('../../database', () => {
           if (email === 'google@example.com') return null;
           return null;
         }),
-        getByGoogleId: jest.fn().mockImplementation((_) => {
-          // Return null by default (no user with this Google ID)
-          return null;
-        }),
+        getByGoogleId: jest.fn().mockReturnValue(null),
         create: jest.fn().mockImplementation((email, name, googleId) => ({
           id: 'new-user-id',
           email,
