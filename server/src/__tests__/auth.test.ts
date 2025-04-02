@@ -27,12 +27,47 @@ jest.mock('passport', () => {
 });
 
 describe('Authentication Features', () => {
-  beforeEach(() => {
-    // Reset the database for each test
-    initializeTestDatabase();
+  // Hold reference to DB connection for proper cleanup
+  let db: any = null;
 
-    // Clear all mock calls before each test
-    jest.clearAllMocks();
+  beforeEach(() => {
+    try {
+      // Reset the database for each test
+      initializeTestDatabase();
+
+      // Get a connection to use for this test
+      const { db: testDb } = getRepositories(true);
+      db = testDb;
+
+      // Clear all mock calls before each test
+      jest.clearAllMocks();
+    } catch (error) {
+      console.error('Error in test setup:', error);
+      throw error;
+    }
+  });
+
+  afterEach(() => {
+    try {
+      // Close the DB connection after each test
+      if (db) {
+        db.close();
+        db = null;
+      }
+    } catch (error) {
+      console.error('Error in test cleanup:', error);
+    }
+  });
+
+  // Close any remaining connections after all tests
+  afterAll(() => {
+    try {
+      if (db) {
+        db.close();
+      }
+    } catch (error) {
+      console.error('Error in final cleanup:', error);
+    }
   });
 
   describe('User Authentication', () => {
