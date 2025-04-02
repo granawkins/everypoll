@@ -1,8 +1,8 @@
 /**
  * Authentication middleware
  */
-import { Request, Response, NextFunction } from 'express';
-import { getRepositories, User } from '../database';
+import { Request, Response, NextFunction, RequestHandler } from 'express';
+import { getRepositories, User as DbUser } from '../database';
 import { verifyToken } from './jwt';
 
 // Extend Express Request interface to include user property
@@ -94,7 +94,10 @@ export const requireAuth: RequestHandler = function (
   res: Response,
   next: NextFunction
 ): void {
-  if (req.user && req.user.email) {
+  // Double-cast through unknown to our database User type
+  // This is a common TypeScript pattern to bypass type compatibility issues
+  const user = req.user as unknown as DbUser;
+  if (user && user.email) {
     next();
     return;
   }

@@ -1,9 +1,9 @@
 /**
  * Authentication controllers for handling auth-related requests
  */
-import { Request, Response, NextFunction, RequestHandler } from 'express';
+import { Request, Response, RequestHandler } from 'express';
 import passport from 'passport';
-import { getRepositories } from '../database';
+import { getRepositories, User } from '../database';
 import { generateToken } from './jwt';
 
 /**
@@ -23,10 +23,12 @@ export const getCurrentUser: RequestHandler = function (
   }
 
   // Return authenticated user
+  // Cast Express.User to our database User type
+  const user = req.user as User;
   res.json({
     user: req.user,
-    isAuthenticated: !!req.user.email,
-    token: generateToken(req.user),
+    isAuthenticated: !!user.email,
+    token: generateToken(user),
   });
 };
 
@@ -48,8 +50,8 @@ export const googleLogin: RequestHandler = function (
  */
 export const googleCallback: RequestHandler = function (
   req: Request,
-  res: Response,
-  next: NextFunction
+  res: Response
+  // NextFunction parameter removed as it's not needed
 ): void {
   passport.authenticate('google', {
     failureRedirect: '/',

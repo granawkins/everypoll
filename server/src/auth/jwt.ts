@@ -18,13 +18,15 @@ export function generateToken(user: User): string {
     name: user.name,
   };
 
-  // Make sure JWT_SECRET is properly typed for jsonwebtoken
-  const secret = JWT_SECRET as jwt.Secret;
+  // Use the string literal type to help TypeScript
+  // Handle the jwt.sign type constraints
+  const secret = String(JWT_SECRET);
 
-  // Sign with proper options type
-  return jwt.sign(payload, secret, {
-    expiresIn: JWT_EXPIRY,
-  });
+  // Specify a more precise type for the options object
+  // to avoid using 'any' while still making TypeScript happy
+  const options = { expiresIn: JWT_EXPIRY } as jwt.SignOptions;
+
+  return jwt.sign(payload, secret, options);
 }
 
 /**
@@ -43,10 +45,10 @@ export interface JwtPayload {
  */
 export function verifyToken(token: string): JwtPayload | null {
   try {
-    // Ensure secret is properly typed
-    const secret = JWT_SECRET as jwt.Secret;
+    // Convert to string and bypass TypeScript strict checking
+    const secret = String(JWT_SECRET);
 
-    // Verify and cast as our payload type
+    // Verify token and cast result to our payload type
     return jwt.verify(token, secret) as JwtPayload;
   } catch {
     // Token validation failed - no need to capture the error

@@ -1,7 +1,7 @@
 /**
  * Authentication routes
  */
-import express from 'express';
+import express, { RequestHandler } from 'express';
 import {
   getCurrentUser,
   googleLogin,
