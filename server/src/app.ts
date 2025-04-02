@@ -1,15 +1,14 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
-import { getRepositories } from './database';
+import { getConnection } from './database';
 
 export const app = express();
 export const PORT = process.env.PORT || 5000;
 export const CLIENT_DIST_PATH = path.join(__dirname, '../../client/dist');
 
-// Initialize database and repositories
-const { userRepository, pollRepository, voteRepository, db } =
-  getRepositories();
+// Initialize database connection
+const db = getConnection();
 
 // Gracefully close database on process exit
 process.on('exit', () => {

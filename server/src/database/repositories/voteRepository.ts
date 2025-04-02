@@ -32,9 +32,12 @@ export class VoteRepository {
       stmt.run(id, pollId, answerId, userId);
 
       return this.getById(id);
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Check if error is due to unique constraint violation
-      if (error.message.includes('UNIQUE constraint failed')) {
+      if (
+        error instanceof Error &&
+        error.message.includes('UNIQUE constraint failed')
+      ) {
         throw new Error('User has already voted on this poll');
       }
       throw error;
@@ -144,7 +147,7 @@ export class VoteRepository {
       WHERE v1.poll_id = ? AND v2.poll_id = ?
     `;
 
-    const params: any[] = [targetPollId, referencePollId];
+    const params: string[] = [targetPollId, referencePollId];
 
     if (referenceAnswerId) {
       sql += ' AND v2.answer_id = ?';

@@ -69,7 +69,7 @@ export class UserRepository {
   update(id: string, email?: string, name?: string): User {
     // Build the update statement dynamically based on provided fields
     const updates: string[] = [];
-    const params: any[] = [];
+    const params: (string | null)[] = [];
 
     if (email !== undefined) {
       updates.push('email = ?');

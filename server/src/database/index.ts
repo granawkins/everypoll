@@ -3,8 +3,6 @@ import {
   initializeDatabase,
   initializeTestDatabase,
 } from './connection';
-import { createTables } from './schema';
-import { runMigrations } from './migrations';
 import { UserRepository } from './repositories/userRepository';
 import { PollRepository } from './repositories/pollRepository';
 import { VoteRepository } from './repositories/voteRepository';

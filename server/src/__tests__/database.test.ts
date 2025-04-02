@@ -1,12 +1,4 @@
-import { v4 as uuidv4 } from 'uuid';
-import {
-  initializeTestDatabase,
-  getRepositories,
-  User,
-  Poll,
-  Answer,
-  Vote,
-} from '../database';
+import { initializeTestDatabase, getRepositories } from '../database';
 
 describe('Database Tests', () => {
   // Before each test, initialize a fresh test database
@@ -180,8 +172,9 @@ describe('Database Tests', () => {
 
       // Record votes
       const vote1 = voteRepository.create(user1.id, poll.id, answers[0].id);
-      const vote2 = voteRepository.create(user2.id, poll.id, answers[1].id);
-      const vote3 = voteRepository.create(user3.id, poll.id, answers[0].id);
+      // Record other votes without storing the references
+      voteRepository.create(user2.id, poll.id, answers[1].id);
+      voteRepository.create(user3.id, poll.id, answers[0].id);
 
       // Check votes
       expect(vote1.poll_id).toBe(poll.id);
