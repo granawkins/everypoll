@@ -7,7 +7,6 @@ import { runMigrations } from './migrations';
 // Database configuration
 // For CI environments, use in-memory database to avoid all file permission issues
 const isCI = process.env.CI === 'true';
-const isTest = process.env.NODE_ENV === 'test';
 
 // If in CI, use the current directory (which should be writable)
 // Otherwise use the data directory as defined in the project structure
