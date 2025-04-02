@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { createPoll, getPollById } from '../../controllers/polls';
 import { User } from '../../database';
 
@@ -59,6 +59,7 @@ jest.mock('../../database', () => {
 describe('Poll Controllers', () => {
   let mockRequest: Partial<Request>;
   let mockResponse: Partial<Response>;
+  let mockNext: NextFunction;
 
   beforeEach(() => {
     mockResponse = {
@@ -75,6 +76,7 @@ describe('Poll Controllers', () => {
         created_at: new Date().toISOString(),
       },
     };
+    mockNext = jest.fn();
   });
 
   afterEach(() => {
@@ -88,7 +90,7 @@ describe('Poll Controllers', () => {
         answers: ['Red', 'Blue', 'Green'],
       };
 
-      createPoll(mockRequest as Request, mockResponse as Response);
+      createPoll(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockResponse.status).toHaveBeenCalledWith(201);
       expect(mockResponse.json).toHaveBeenCalledWith(
@@ -110,7 +112,7 @@ describe('Poll Controllers', () => {
         answers: ['Red', 'Blue', 'Green'],
       };
 
-      createPoll(mockRequest as Request, mockResponse as Response);
+      createPoll(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -124,7 +126,7 @@ describe('Poll Controllers', () => {
         answers: ['Red'], // Too few answers
       };
 
-      createPoll(mockRequest as Request, mockResponse as Response);
+      createPoll(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -138,7 +140,7 @@ describe('Poll Controllers', () => {
         answers: ['Red', '', null], // Empty string and null not allowed
       };
 
-      createPoll(mockRequest as Request, mockResponse as Response);
+      createPoll(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -153,7 +155,7 @@ describe('Poll Controllers', () => {
         answers: ['Red', 'Blue', 'Green'],
       };
 
-      createPoll(mockRequest as Request, mockResponse as Response);
+      createPoll(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockResponse.status).toHaveBeenCalledWith(500);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -166,7 +168,7 @@ describe('Poll Controllers', () => {
     it('should get a poll by ID with answers and author', () => {
       mockRequest.params = { id: 'test-poll-id' };
 
-      getPollById(mockRequest as Request, mockResponse as Response);
+      getPollById(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockResponse.json).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -189,7 +191,7 @@ describe('Poll Controllers', () => {
     it('should return 404 if poll not found', () => {
       mockRequest.params = { id: 'non-existent-id' };
 
-      getPollById(mockRequest as Request, mockResponse as Response);
+      getPollById(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockResponse.status).toHaveBeenCalledWith(404);
       expect(mockResponse.json).toHaveBeenCalledWith({
@@ -200,7 +202,7 @@ describe('Poll Controllers', () => {
     it('should return 400 if poll ID is not provided', () => {
       mockRequest.params = {};
 
-      getPollById(mockRequest as Request, mockResponse as Response);
+      getPollById(mockRequest as Request, mockResponse as Response, mockNext);
 
       expect(mockResponse.status).toHaveBeenCalledWith(400);
       expect(mockResponse.json).toHaveBeenCalledWith({
