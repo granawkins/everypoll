@@ -77,7 +77,6 @@ The roadmap is divided into two phases:
 
 **Summary:** Implement API endpoints for creating and viewing polls.
 
-
 **Architecture:**
 
 - Follow a layered architecture pattern:
