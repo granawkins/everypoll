@@ -8,11 +8,12 @@ import { generateToken } from '../services/jwt';
  */
 export function getCurrentUser(req: Request, res: Response) {
   if (!req.user) {
-    return res.status(500).json({ error: 'User not available' });
+    res.status(500).json({ error: 'User not available' });
+    return;
   }
 
   // Return user info with authentication status
-  return res.json({
+  res.json({
     user: req.user,
     isAuthenticated: req.isAuthenticated,
   });
@@ -29,7 +30,7 @@ export function logout(req: Request, res: Response) {
   });
 
   // Return success message
-  return res.json({ message: 'Logged out successfully' });
+  res.json({ message: 'Logged out successfully' });
 }
 
 /**
@@ -41,7 +42,8 @@ export function login(req: Request, res: Response) {
   const { email, name } = req.body;
 
   if (!email) {
-    return res.status(400).json({ error: 'Email is required' });
+    res.status(400).json({ error: 'Email is required' });
+    return;
   }
 
   const { userRepository } = getRepositories();
@@ -64,7 +66,7 @@ export function login(req: Request, res: Response) {
   });
 
   // Return user info
-  return res.json({
+  res.json({
     user,
     isAuthenticated: true,
   });
