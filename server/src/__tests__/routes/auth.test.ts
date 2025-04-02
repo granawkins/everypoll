@@ -303,7 +303,8 @@ describe('Auth Routes', () => {
         mockExistingUser
       );
 
-      const response = await request(app)
+      // Send request and ignore response since we're just checking the update was called
+      await request(app)
         .get('/api/auth/google/callback?code=test-code&state=test-state')
         .set('Cookie', ['oauth_state=test-state']);
 
@@ -321,13 +322,13 @@ describe('Auth Routes', () => {
         new Error('API error')
       );
 
-      const response = await request(app)
+      const errorResponse = await request(app)
         .get('/api/auth/google/callback?code=test-code&state=test-state')
         .set('Cookie', ['oauth_state=test-state']);
 
       // Should redirect to error URL
-      expect(response.status).toBe(302);
-      expect(response.headers.location).toContain('error=auth_failed');
+      expect(errorResponse.status).toBe(302);
+      expect(errorResponse.headers.location).toContain('error=auth_failed');
     });
   });
 });

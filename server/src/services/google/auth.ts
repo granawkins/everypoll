@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+import fetch from 'node-fetch';
 import {
   GOOGLE_TOKEN_URL,
   GOOGLE_USER_INFO_URL,
