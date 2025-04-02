@@ -1,10 +1,25 @@
 import { Request, Response } from 'express';
-import { getCurrentUser, login, logout } from '../../controllers/auth';
+import {
+  getCurrentUser,
+  login,
+  logout,
+  googleLogin,
+  googleCallback,
+} from '../../controllers/auth';
 import { generateToken } from '../../services/jwt';
 import { getRepositories, User } from '../../database';
+import { generateAuthUrl } from '../../services/google/config';
+import * as googleAuth from '../../services/google/auth';
 
-// Mock the JWT service
+// Mock the required modules
 jest.mock('../../services/jwt');
+jest.mock('../../services/google/config');
+jest.mock('../../services/google/auth');
+jest.mock('crypto', () => ({
+  randomBytes: jest.fn().mockReturnValue({
+    toString: jest.fn().mockReturnValue('random-state-string'),
+  }),
+}));
 
 // Mock the database repositories
 jest.mock('../../database', () => {
@@ -21,10 +36,17 @@ jest.mock('../../database', () => {
         getByEmail: jest.fn().mockImplementation((email) => {
           if (email === 'test@example.com') return mockUser;
           if (email === 'new@example.com') return null;
+          if (email === 'google@example.com') return null;
           return null;
         }),
         create: jest.fn().mockImplementation((email, name) => ({
           id: 'new-user-id',
+          email,
+          name,
+          created_at: new Date().toISOString(),
+        })),
+        update: jest.fn().mockImplementation((id, email, name) => ({
+          id,
           email,
           name,
           created_at: new Date().toISOString(),
@@ -45,11 +67,17 @@ describe('Auth Controllers', () => {
       status: jest.fn().mockReturnThis(),
       cookie: jest.fn(),
       clearCookie: jest.fn(),
+      redirect: jest.fn(),
     };
     mockRequest = {
       body: {},
+      query: {},
+      cookies: {},
     };
     (generateToken as jest.Mock).mockReturnValue('mock-token');
+    (generateAuthUrl as jest.Mock).mockReturnValue(
+      'https://accounts.google.com/o/oauth2/auth?mock-url'
+    );
   });
 
   afterEach(() => {
@@ -175,6 +203,154 @@ describe('Auth Controllers', () => {
       expect(getRepositories().userRepository.create).toHaveBeenCalledWith(
         'new@example.com',
         'new'
+      );
+    });
+  });
+
+  describe('googleLogin controller', () => {
+    it('should set state cookie and redirect to Google auth URL', () => {
+      googleLogin(mockRequest as Request, mockResponse as Response);
+
+      // Check that state cookie was set
+      expect(mockResponse.cookie).toHaveBeenCalledWith(
+        'oauth_state',
+        'random-state-string',
+        expect.objectContaining({
+          httpOnly: true,
+          maxAge: 10 * 60 * 1000, // 10 minutes
+        })
+      );
+
+      // Check that generateAuthUrl was called with state
+      expect(generateAuthUrl).toHaveBeenCalledWith('random-state-string');
+
+      // Check that response was redirected to Google
+      expect(mockResponse.redirect).toHaveBeenCalledWith(
+        'https://accounts.google.com/o/oauth2/auth?mock-url'
+      );
+    });
+  });
+
+  describe('googleCallback controller', () => {
+    beforeEach(() => {
+      // Mock the Google API responses
+      (googleAuth.exchangeCodeForTokens as jest.Mock).mockResolvedValue({
+        access_token: 'test-access-token',
+        expires_in: 3600,
+        token_type: 'Bearer',
+      });
+
+      (googleAuth.getUserInfo as jest.Mock).mockResolvedValue({
+        id: 'google-user-id',
+        email: 'google@example.com',
+        verified_email: true,
+        name: 'Google User',
+      });
+    });
+
+    it('should redirect with error if state is invalid', async () => {
+      mockRequest.query = { state: 'invalid-state' };
+      mockRequest.cookies = { oauth_state: 'saved-state' };
+
+      await googleCallback(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/login?error=invalid_state'
+      );
+    });
+
+    it('should redirect with error if code is missing', async () => {
+      mockRequest.query = { state: 'test-state' };
+      mockRequest.cookies = { oauth_state: 'test-state' };
+
+      await googleCallback(mockRequest as Request, mockResponse as Response);
+
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith('oauth_state');
+      expect(mockResponse.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/login?error=no_code'
+      );
+    });
+
+    it('should create new user and set auth cookie for new Google user', async () => {
+      mockRequest.query = { code: 'test-auth-code', state: 'test-state' };
+      mockRequest.cookies = { oauth_state: 'test-state' };
+
+      await googleCallback(mockRequest as Request, mockResponse as Response);
+
+      // Check that state cookie was cleared
+      expect(mockResponse.clearCookie).toHaveBeenCalledWith('oauth_state');
+
+      // Check that code was exchanged for tokens
+      expect(googleAuth.exchangeCodeForTokens).toHaveBeenCalledWith(
+        'test-auth-code'
+      );
+
+      // Check that user info was fetched
+      expect(googleAuth.getUserInfo).toHaveBeenCalledWith('test-access-token');
+
+      // Check that user repository methods were called
+      expect(getRepositories().userRepository.getByEmail).toHaveBeenCalledWith(
+        'google@example.com'
+      );
+      expect(getRepositories().userRepository.create).toHaveBeenCalledWith(
+        'google@example.com',
+        'Google User'
+      );
+
+      // Check that JWT was generated and cookie set
+      expect(generateToken).toHaveBeenCalledWith('new-user-id');
+      expect(mockResponse.cookie).toHaveBeenCalledWith(
+        'auth_token',
+        'mock-token',
+        expect.any(Object)
+      );
+
+      // Check redirect to frontend
+      expect(mockResponse.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173?auth=success'
+      );
+    });
+
+    it('should update existing user and set auth cookie for returning Google user', async () => {
+      // Setup existing user
+      const { userRepository } = getRepositories();
+      (userRepository.getByEmail as jest.Mock).mockReturnValueOnce({
+        id: 'existing-user-id',
+        email: 'google@example.com',
+        name: 'Old Name',
+        created_at: new Date().toISOString(),
+      });
+
+      mockRequest.query = { code: 'test-auth-code', state: 'test-state' };
+      mockRequest.cookies = { oauth_state: 'test-state' };
+
+      await googleCallback(mockRequest as Request, mockResponse as Response);
+
+      // Check that user was updated
+      expect(userRepository.update).toHaveBeenCalledWith(
+        'existing-user-id',
+        'google@example.com',
+        'Google User'
+      );
+
+      // Check that JWT was generated and cookie set
+      expect(generateToken).toHaveBeenCalledWith('existing-user-id');
+    });
+
+    it('should handle Google API errors', async () => {
+      // Mock API error
+      (googleAuth.exchangeCodeForTokens as jest.Mock).mockRejectedValue(
+        new Error('API error')
+      );
+
+      mockRequest.query = { code: 'test-auth-code', state: 'test-state' };
+      mockRequest.cookies = { oauth_state: 'test-state' };
+
+      await googleCallback(mockRequest as Request, mockResponse as Response);
+
+      // Check redirect to error page
+      expect(mockResponse.redirect).toHaveBeenCalledWith(
+        'http://localhost:5173/login?error=auth_failed'
       );
     });
   });

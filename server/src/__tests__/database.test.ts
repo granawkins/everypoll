@@ -39,6 +39,24 @@ describe('Database Tests', () => {
       expect(user.name).toBeNull();
     });
 
+    it('should create and retrieve users with Google ID', () => {
+      const { userRepository } = getRepositories(true);
+
+      // Create a user with Google ID
+      const user = userRepository.create(
+        'google@example.com',
+        'Google User',
+        'google123'
+      );
+
+      // User should have the Google ID
+      expect(user.google_id).toBe('google123');
+
+      // Retrieve user by Google ID
+      const userByGoogleId = userRepository.getByGoogleId('google123');
+      expect(userByGoogleId).toMatchObject(user);
+    });
+
     it('should update user information', () => {
       const { userRepository } = getRepositories(true);
 
@@ -61,6 +79,17 @@ describe('Database Tests', () => {
       );
       expect(updatedNameUser.email).toBe('updated@example.com');
       expect(updatedNameUser.name).toBe('Updated Name');
+
+      // Update Google ID
+      const updatedGoogleUser = userRepository.update(
+        user.id,
+        undefined,
+        undefined,
+        'google123'
+      );
+      expect(updatedGoogleUser.google_id).toBe('google123');
+      expect(updatedGoogleUser.email).toBe('updated@example.com');
+      expect(updatedGoogleUser.name).toBe('Updated Name');
     });
   });
 
