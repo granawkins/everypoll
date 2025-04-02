@@ -5,7 +5,7 @@ import { getRepositories } from '../database';
  * Create a new poll
  * Requires authentication
  */
-export async function createPoll(req: Request, res: Response) {
+export function createPoll(req: Request, res: Response) {
   try {
     const { question, answers } = req.body;
     const userId = req.user?.id;
@@ -61,7 +61,7 @@ export async function createPoll(req: Request, res: Response) {
  * Get a poll by ID
  * Includes answers, author info, and vote counts if available
  */
-export async function getPollById(req: Request, res: Response) {
+export function getPollById(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
