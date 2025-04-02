@@ -1,21 +1,27 @@
-import express from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 import { createPoll, getPollById } from '../controllers/polls';
 import { authenticate, requireAuth } from '../middleware/auth';
 
 const router = express.Router();
+
+// Create Express-compatible handler wrappers
+const asyncHandler =
+  (fn: Function) => (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res, next)).catch(next);
+  };
 
 /**
  * POST /api/polls
  * Create a new poll
  * Requires authentication
  */
-router.post('/', authenticate, requireAuth, createPoll);
+router.post('/', authenticate, requireAuth, asyncHandler(createPoll));
 
 /**
  * GET /api/polls/:id
  * Get a poll by ID with its answers, author info, and vote counts
  * Authentication optional (to check if user has voted)
  */
-router.get('/:id', authenticate, getPollById);
+router.get('/:id', authenticate, asyncHandler(getPollById));
 
 export default router;
