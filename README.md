@@ -1,72 +1,97 @@
-# Mentat Template JS
+# EveryPoll
 
-A full-stack JavaScript template project with React frontend and Express backend, both using TypeScript.
+EveryPoll is a social network website for polls, where every poll can be cross-referenced to any other poll. This document is the complete spec for the project.
 
-## Commands
+## User Experience
 
-This project uses npm workspaces to manage both client and server packages. The following commands are available at the root level:
+1. The atomic unit of EveryPoll is a PollCard, which works like this:
+   a. Displayed is the question, the author's name and a link to their public profile, buttons for each answer option, and the vote count.
+   b. When the user clicks an answer, their vote is recorded and the the buttons change to a column chart showing the results, with percentages and the answer they voted for highlighted.
+   c. Below the chart & vote count (after voting) is a search bar where the user can search for and select another poll to cross-reference.
+   d. When a cross-referenced poll is selected, if the user hasn't voted on it, the questino/buttons interface is displayed (below the main chart).
+   e. After they've voted, N new column charts are displayed - one for each answer option. These charts show the results for the original poll, only for people who voted (N) in the cross-referenced poll.
+   f. When the user clicks on one of those charts, it replaces the main chart, and below the original question is the cross-referenced poll's question with a drop-down of the different answer options.
+   g. This can be repeated indefinitely.
 
-| Command | Description |
-|---------|-------------|
-| `npm install` | Install dependencies for both client and server |
-| `npm run dev` | Run both client and server in development mode concurrently |
-| `npm run build` | Build both client and server for production |
-| `npm start` | Start the server in production mode (after building) |
-| `npm run lint` | Run ESLint to check code quality |
-| `npm run format` | Run Prettier to format code |
-| `npm run test` | Run tests for both client and server |
+2. The landing page (everypoll.com) consists of a vertical feed of polls. The feed is an infinite scroll of PollCards selected by an algorithm on the server.
 
-## Client
+3. The top of the page is a sticky header with the EveryPoll logo on the left, a search bar in the middle (which updates the feed), and buttons on the right.
 
-The client is a React application built with modern tooling:
+4. Users are tied to a Google account and must be logged in to vote.
+   a. If they click a vote button while not logged in, a modal window pops up with a Login with Google button.
+   b. In the top-right corner is either a Login with Google button or their avatar.
+   c. Clicking the Login with Google button redirects them to the Google login page, then back to where they were.
+   d. If they click the avatar, their brought to the user screen where they see their email and a logout button, and a 2-tab interface:
+   i. The first tab shows polls they've created, in a feed just like the landing page.
+   ii. The second tab shows polls they've voted on, again in a feed just like the landing page.
 
-### Key Technologies
+5. Logged-in users can create polls.
+   a. On the top bar, left of the avatar, is a button that says "Create Poll".
+   b. Clicking it brings them to the poll creation screen.
+   c. There are inputs for the question and for each answer option. Polls require at least 2 answers, and can have up to 10.
 
-- **React 19**: Latest version of the React library
-- **TypeScript**: For type safety and better developer experience
-- **Vite**: Fast and efficient build tool and development server
-- **Vitest**: Testing framework compatible with Vite
+## Technical Implementation
 
-### Client Commands
+It is built from the mentat-template-js repo, which is a full-stack javascript application with a React frontend and Node.js backend. Added is a sqlite database and Google user authentication.
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server with hot reloading |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build locally |
-| `npm test` | Run tests once |
-| `npm run test:watch` | Run tests in watch mode |
+### Backend
 
-### Testing
+1. A sqlite database with the following tables. It should be implemented such that when the application is started, the database is created if it doesn't exist, and the tables are created if they don't exist. A migrations system should be implemented (empty for now) such that when the application is updated, the database is updated to the latest version.
+   a. Users
+   i. id (uuid, required, unique)
+   ii. email (text, optional, unique)
+   iii. name (text, optional, unique)
+   b. Polls
+   i. id (uuid, required, unique)
+   ii. author_id (uuid, required, foreign key)
+   iii. created_at (datetime, required)
+   iv. question (text, required)
+   c. Answers
+   i. id (uuid, required, unique)
+   ii. poll_id (uuid, required, foreign key)
+   iii. text (text, required)
+   d. Votes
+   i. id (uuid, required, unique)
+   ii. poll_id (uuid, required, foreign key)
+   iii. answer_id (uuid, required, foreign key)
+   iv. user_id (uuid, required, foreign key)
+   v. created_at (datetime, required)
 
-The client uses a modern testing stack:
-- **Vitest**: Test runner compatible with Jest API
-- **React Testing Library**: For component testing
-- **JSDOM**: Browser-like environment for tests
+2. An express server with the following routes:
+   a. GET /api/auth/me - passes the user's session cookie if found (otherwise null). If cookie is found, it should be verified and the user object should be returned. If not, create a new anonymous user (no email) and session cookie and return that.
+   b. POST /api/auth/login - redirects the user to the Google login page, passing their id and redirect url.
+   c. POST /api/auth/google-callback - verifies the user's Google login, updates their database entry with user's name and email, and passes the user's session cookie and user object back to the client.
+   d. POST /api/auth/logout - clears the user's session cookie.
 
-## Server
+// Authenticated routes
+e. GET /api/feed - returns a paginated feed of polls, ordered by creation date.
+f. GET /api/feed/search?q=<query> - returns a paginated feed of polls that match the query.
 
-The server is an Express.js application written in TypeScript.
+g. POST /api/poll - creates a new poll
+i. POST /api/poll/:id/vote - records a vote for the given poll id and answer id, and passes the vote object back to the client.
+h. GET /api/poll/:id?p1=<pollId1>&a1=<answerId1>&p2=<pollId2>&a2=<answerId2> - returns a poll and all its data by id, with optional cross-references to other polls.
+i. GET /api/poll/:id/search?q=<query>&p1... - returns a list of polls to cross-reference with the given poll. Query is optional, as are other already-cross-referenced polls.
 
-### Key Technologies
+### Frontend
 
-- **Express**: Web framework for Node.js
-- **TypeScript**: For type safety and better developer experience
-- **ts-node-dev**: For development with hot reloading
-- **Jest**: For testing
+A react application.
 
-### Server Commands
+1. React Router with the following pages:
+   a. / - the landing page with header and feed of polls
+   b. /poll/:id?p1... - view a single poll and optionally cross-reference
+   c. /user - view a user's profile and the polls they've created. If logged in and viewing your own profile, there is an option to logout and a second tab with polls you've voted on.
+   d. /create - create a new poll
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Start development server with hot reloading |
-| `npm run build` | Build for production |
-| `npm start` | Start server in production mode |
-| `npm test` | Run tests once |
-| `npm run test:watch` | Run tests in watch mode |
+2. The following standard components:
+   a. Header, visible on all pages, with logo, search bar (if on feed), login button or avatar/create poll button
+   b. PollCard, used to display any poll. Will have many sub-components like answer buttons, column charts, cross-reference search bar, etc.
 
-### Testing
+### Conventions
 
-The server uses:
-- **Jest**: Test runner
-- **Supertest**: For HTTP assertions and API testing
+This project will be built and managed primarily using AI. As such:
+
+1. Try to avoid adding dependencies beyond what is specified in this spec. If you must, use popular libraries and always check for the most recent version.
+2. Comment liberally.
+3. Add tests wherever possible.
+4. Update CHANGELOG.md with each pull request.
+5. If the user requests changes to the spec, update this file accordingly.
