@@ -109,6 +109,16 @@ The roadmap is divided into two phases:
 - Setup route protection using the existing auth middleware
 - Add appropriate error handling throughout
 
+**Implementation Considerations:**
+
+- When implementing Express route handlers, consider TypeScript compatibility:
+  ```typescript
+  // TypeScript may raise compatibility errors with Express route handlers
+  // If needed, use targeted @ts-expect-error directives for specific routes
+  // @ts-expect-error - Express handler compatibility issue
+  router.post('/', authenticate, requireAuth, createPoll);
+  ```
+
 **Test Setup:**
 
 - Ensure proper database isolation between tests:
