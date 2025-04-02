@@ -78,6 +78,7 @@ jest.mock('../../database', () => {
     id: 'google-user-id',
     email: 'google@example.com',
     name: 'Google User',
+    google_id: 'google-user-id',
     created_at: new Date().toISOString(),
   };
 
@@ -95,9 +96,25 @@ jest.mock('../../database', () => {
           if (email === 'google@example.com') return mockGoogleUser;
           return null;
         }),
-        create: jest.fn().mockReturnValue(mockUser),
+        getByGoogleId: jest.fn().mockImplementation((googleId) => {
+          if (googleId === 'google-user-id') return mockGoogleUser;
+          return null;
+        }),
+        create: jest.fn().mockImplementation((email, name, googleId) => ({
+          id: 'new-user-id',
+          email,
+          name,
+          google_id: googleId,
+          created_at: new Date().toISOString(),
+        })),
         createAnonymous: jest.fn().mockReturnValue(mockAnonymousUser),
-        update: jest.fn().mockReturnValue(mockUser),
+        update: jest.fn().mockImplementation((id, email, name, googleId) => ({
+          id,
+          email,
+          name,
+          google_id: googleId,
+          created_at: new Date().toISOString(),
+        })),
       },
     }),
   };
@@ -285,15 +302,24 @@ describe('Auth Routes', () => {
       // Should have called the right functions
       expect(exchangeCodeForTokens).toHaveBeenCalledWith('test-code');
       expect(getUserInfo).toHaveBeenCalledWith('test-access-token');
+      // First checks by Google ID, then by email
+      expect(userRepository.getByGoogleId).toHaveBeenCalledWith(
+        'google-user-id'
+      );
       expect(userRepository.getByEmail).toHaveBeenCalledWith(
         'google@example.com'
       );
-      expect(userRepository.create).toHaveBeenCalled();
+      // Create with Google ID
+      expect(userRepository.create).toHaveBeenCalledWith(
+        'google@example.com',
+        'Google User',
+        'google-user-id'
+      );
       expect(generateToken).toHaveBeenCalled();
     });
 
     it('should update existing user if email already exists', async () => {
-      // Mock existing user
+      // Mock existing user found by email but not by Google ID
       const mockExistingUser = {
         id: 'existing-user-id',
         email: 'google@example.com',
@@ -302,6 +328,9 @@ describe('Auth Routes', () => {
       };
 
       const { userRepository } = getRepositories();
+      // Make getByGoogleId return null for this test
+      (userRepository.getByGoogleId as jest.Mock).mockReturnValueOnce(null);
+      // Then make getByEmail find the existing user
       (userRepository.getByEmail as jest.Mock).mockReturnValueOnce(
         mockExistingUser
       );
@@ -311,11 +340,12 @@ describe('Auth Routes', () => {
         .get('/api/auth/google/callback?code=test-code&state=test-state')
         .set('Cookie', ['oauth_state=test-state']);
 
-      // Should have updated existing user
+      // Should have updated existing user with Google ID
       expect(userRepository.update).toHaveBeenCalledWith(
         'existing-user-id',
         'google@example.com',
-        'Google User'
+        'Google User',
+        'google-user-id'
       );
     });
 

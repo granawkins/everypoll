@@ -39,16 +39,22 @@ jest.mock('../../database', () => {
           if (email === 'google@example.com') return null;
           return null;
         }),
-        create: jest.fn().mockImplementation((email, name) => ({
+        getByGoogleId: jest.fn().mockImplementation((googleId) => {
+          // Return null by default (no user with this Google ID)
+          return null;
+        }),
+        create: jest.fn().mockImplementation((email, name, googleId) => ({
           id: 'new-user-id',
           email,
           name,
+          google_id: googleId,
           created_at: new Date().toISOString(),
         })),
-        update: jest.fn().mockImplementation((id, email, name) => ({
+        update: jest.fn().mockImplementation((id, email, name, googleId) => ({
           id,
           email,
           name,
+          google_id: googleId,
           created_at: new Date().toISOString(),
         })),
       },
@@ -289,12 +295,19 @@ describe('Auth Controllers', () => {
       expect(googleAuth.getUserInfo).toHaveBeenCalledWith('test-access-token');
 
       // Check that user repository methods were called
+      // First checks by Google ID
+      expect(
+        getRepositories().userRepository.getByGoogleId
+      ).toHaveBeenCalledWith('google-user-id');
+      // Then checks by email
       expect(getRepositories().userRepository.getByEmail).toHaveBeenCalledWith(
         'google@example.com'
       );
+      // Finally creates user with Google ID
       expect(getRepositories().userRepository.create).toHaveBeenCalledWith(
         'google@example.com',
-        'Google User'
+        'Google User',
+        'google-user-id'
       );
 
       // Check that JWT was generated and cookie set
@@ -314,6 +327,9 @@ describe('Auth Controllers', () => {
     it('should update existing user and set auth cookie for returning Google user', async () => {
       // Setup existing user
       const { userRepository } = getRepositories();
+      // First mock getByGoogleId to return null (no user found by Google ID)
+      (userRepository.getByGoogleId as jest.Mock).mockReturnValueOnce(null);
+      // Then mock getByEmail to return the existing user (found by email)
       (userRepository.getByEmail as jest.Mock).mockReturnValueOnce({
         id: 'existing-user-id',
         email: 'google@example.com',
@@ -326,11 +342,12 @@ describe('Auth Controllers', () => {
 
       await googleCallback(mockRequest as Request, mockResponse as Response);
 
-      // Check that user was updated
+      // Check that user was updated with Google ID
       expect(userRepository.update).toHaveBeenCalledWith(
         'existing-user-id',
         'google@example.com',
-        'Google User'
+        'Google User',
+        'google-user-id'
       );
 
       // Check that JWT was generated and cookie set
