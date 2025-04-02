@@ -37,14 +37,10 @@ jest.mock('../../database', () => {
     created_at: new Date().toISOString(),
   };
 
+  // Basic answers for most tests
   const mockAnswers = [
     { id: 'answer1', poll_id: 'test-poll-id', text: 'Answer 1' },
     { id: 'answer2', poll_id: 'test-poll-id', text: 'Answer 2' },
-    {
-      id: 'already-voted',
-      poll_id: 'test-poll-id',
-      text: 'Answer for already voted test',
-    },
   ];
 
   const mockVote = {
@@ -75,7 +71,25 @@ jest.mock('../../database', () => {
           if (id === 'non-existent-poll') return null;
           return mockPoll;
         }),
-        getAnswers: jest.fn().mockReturnValue(mockAnswers),
+        getAnswers: jest.fn().mockImplementation(() => {
+          // Return standard answers for most tests, but for the "already voted"
+          // test include the extra answer to make validation pass
+          if (
+            expect
+              .getState()
+              .currentTestName?.includes('user has already voted')
+          ) {
+            return [
+              ...mockAnswers,
+              {
+                id: 'already-voted',
+                poll_id: 'test-poll-id',
+                text: 'Answer for already voted test',
+              },
+            ];
+          }
+          return mockAnswers;
+        }),
       },
       voteRepository: {
         create: jest.fn().mockImplementation((userId, pollId, answerId) => {
