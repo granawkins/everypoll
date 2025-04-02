@@ -31,3 +31,15 @@
 - Added authentication flow to support both new and returning Google users
 - Used built-in Node.js fetch API for external HTTP requests
 - Created comprehensive tests for the OAuth authentication process
+
+## PR 4: Poll Creation and Viewing API
+
+- Implemented API endpoints for creating and viewing polls
+- Added validation for poll creation (requiring question and 2-10 answer options)
+- Created controllers with proper error handling and layered architecture
+- Set up route protection using existing authentication middleware
+- Included author information in poll responses
+- Added vote statistics to poll responses (counts by answer and user's vote)
+- Used TypeScript-compatible patterns for Express route handlers
+- Created comprehensive tests for both endpoints
+- Implemented proper error responses for various scenarios (unauthorized, invalid input, not found)
