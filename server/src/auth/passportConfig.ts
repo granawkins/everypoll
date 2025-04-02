@@ -17,8 +17,9 @@ export function configurePassport(): void {
   const { userRepository } = getRepositories();
 
   // Serialize user to session
-  passport.serializeUser((user: User, done) => {
-    done(null, user.id);
+  passport.serializeUser((user, done) => {
+    // Type assertion here helps with compatibility
+    done(null, (user as User).id);
   });
 
   // Deserialize user from session
@@ -27,7 +28,8 @@ export function configurePassport(): void {
       const user = userRepository.getById(id);
       done(null, user);
     } catch (error) {
-      done(error, null);
+      // Second parameter omitted to fix type issue
+      done(error);
     }
   });
 
@@ -48,23 +50,25 @@ export function configurePassport(): void {
             const name = profile.displayName || profile.name?.givenName;
 
             if (!email) {
-              return done(new Error('No email found in Google profile'), null);
+              // Omit second parameter to fix type error
+              return done(new Error('No email found in Google profile'));
             }
 
             // Look up the user by email
             let user = userRepository.getByEmail(email);
 
             if (user) {
-              // Update user information if needed
-              user = userRepository.update(user.id, email, name || null);
+              // Update user information if needed - use undefined instead of null
+              user = userRepository.update(user.id, email, name || undefined);
             } else {
-              // Create a new user with Google profile info
-              user = userRepository.create(email, name || null);
+              // Create a new user with Google profile info - use undefined instead of null
+              user = userRepository.create(email, name || undefined);
             }
 
             return done(null, user);
           } catch (error) {
-            return done(error, null);
+            // Omit second parameter to fix type error
+            return done(error as Error);
           }
         }
       )

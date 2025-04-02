@@ -11,11 +11,29 @@ import { User } from '../database';
  * @returns The generated JWT token
  */
 export function generateToken(user: User): string {
-  return jwt.sign(
-    { id: user.id, email: user.email, name: user.name },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRY }
-  );
+  // Create a payload with the user data
+  const payload = {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+  };
+
+  // Make sure JWT_SECRET is properly typed for jsonwebtoken
+  const secret = JWT_SECRET as jwt.Secret;
+
+  // Sign with proper options type
+  return jwt.sign(payload, secret, {
+    expiresIn: JWT_EXPIRY,
+  });
+}
+
+/**
+ * JWT payload interface
+ */
+export interface JwtPayload {
+  id: string;
+  email: string | null;
+  name: string | null;
 }
 
 /**
@@ -23,15 +41,13 @@ export function generateToken(user: User): string {
  * @param token The token to verify
  * @returns The payload of the token if valid, null otherwise
  */
-export function verifyToken(
-  token: string
-): { id: string; email: string | null; name: string | null } | null {
+export function verifyToken(token: string): JwtPayload | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as {
-      id: string;
-      email: string | null;
-      name: string | null;
-    };
+    // Ensure secret is properly typed
+    const secret = JWT_SECRET as jwt.Secret;
+
+    // Verify and cast as our payload type
+    return jwt.verify(token, secret) as JwtPayload;
   } catch {
     // Token validation failed - no need to capture the error
     return null;

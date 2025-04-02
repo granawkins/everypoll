@@ -9,10 +9,19 @@ import { verifyToken } from './jwt';
 // Use module augmentation instead of global namespace
 import 'express';
 declare module 'express' {
+  // Extend the Express User interface to match our User model
+  // This ensures compatibility between Express.User and our User model
+  interface User {
+    id: string;
+    email: string | null;
+    name: string | null;
+    created_at: string;
+  }
+
   interface Request {
-    user?: User;
-    isAuthenticated: () => boolean;
-    logoutError?: boolean; // Added for test purposes
+    // We don't need to redefine user as Express already has it
+    // This is just to add the logoutError property for tests
+    logoutError?: boolean;
   }
 }
 
@@ -24,14 +33,21 @@ declare module 'express' {
  * @param options.requireAuth Whether to require authentication (default: false)
  * @returns Express middleware
  */
-export function authenticate(options: { requireAuth?: boolean } = {}) {
+export function authenticate(
+  options: { requireAuth?: boolean } = {}
+): RequestHandler {
   const { requireAuth = false } = options;
   const { userRepository } = getRepositories();
 
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return async function (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> {
     // Check for existing user in session (set by Passport)
     if (req.user) {
-      return next();
+      next();
+      return;
     }
 
     // Check for authentication token (JWT) in headers
@@ -45,13 +61,13 @@ export function authenticate(options: { requireAuth?: boolean } = {}) {
         try {
           const user = userRepository.getById(payload.id);
           req.user = user;
-          return next();
+          next();
+          return;
         } catch {
           // User not found, token may be invalid - no need to capture the error
           if (requireAuth) {
-            return res
-              .status(401)
-              .json({ error: 'Invalid authentication token' });
+            res.status(401).json({ error: 'Invalid authentication token' });
+            return;
           }
         }
       }
@@ -59,7 +75,8 @@ export function authenticate(options: { requireAuth?: boolean } = {}) {
 
     // No authentication found
     if (requireAuth) {
-      return res.status(401).json({ error: 'Authentication required' });
+      res.status(401).json({ error: 'Authentication required' });
+      return;
     }
 
     // For non-protected routes, create an anonymous user if none exists
@@ -72,9 +89,14 @@ export function authenticate(options: { requireAuth?: boolean } = {}) {
 /**
  * Middleware to ensure a route is only accessible by authenticated users
  */
-export function requireAuth(req: Request, res: Response, next: NextFunction) {
+export const requireAuth: RequestHandler = function (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
   if (req.user && req.user.email) {
-    return next();
+    next();
+    return;
   }
-  return res.status(401).json({ error: 'Authentication required' });
-}
+  res.status(401).json({ error: 'Authentication required' });
+};

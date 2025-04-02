@@ -17,7 +17,7 @@ const router = express.Router();
  * @desc    Get current user or create anonymous user
  * @access  Public
  */
-router.get('/me', authenticate(), getCurrentUser);
+router.get('/me', authenticate() as RequestHandler, getCurrentUser);
 
 /**
  * @route   GET /api/auth/login

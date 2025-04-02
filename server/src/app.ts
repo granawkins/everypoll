@@ -72,7 +72,7 @@ app.use(passport.session());
 app.use(express.static(CLIENT_DIST_PATH));
 
 // API routes
-app.get('/api', (req: Request, res: Response) => {
+app.get('/api', function (req: Request, res: Response): void {
   res.json({ message: 'Welcome to the EveryPoll API!' });
 });
 
@@ -83,6 +83,6 @@ app.use('/api/auth', authRoutes);
 // app.use('/api/protected', authenticate({ requireAuth: true }), protectedRoutes);
 
 // Serve React app for all other routes
-app.get('*', (req: Request, res: Response) => {
+app.get('*', function (req: Request, res: Response): void {
   res.sendFile(path.join(CLIENT_DIST_PATH, 'index.html'));
 });
