@@ -4,8 +4,8 @@ This roadmap outlines the step-by-step development process for building the Ever
 
 The roadmap is divided into two phases:
 
-1. Backend Development (PRs 1-6)
-2. Frontend Development (PRs 7-13)
+1. Backend Development (PRs 1-7)
+2. Frontend Development (PRs 8-14)
 
 ## Backend Development
 
@@ -15,11 +15,12 @@ The roadmap is divided into two phases:
 
 **Tasks:**
 
-- Add SQLite as a dependency
+- Add SQLite as a dependency (better-sqlite3)
 - Create database initialization script that builds the DB if not found
 - Define all tables (Users, Polls, Answers, Votes) in the initialization script
 - Implement a migrations system for future schema changes
 - Create a testing database setup that reinitializes for tests
+- Ensure CI compatibility using in-memory databases for testing in CI environments
 
 **Tests:**
 
@@ -28,30 +29,52 @@ The roadmap is divided into two phases:
 - Migration system should apply migrations in order
 - Test database should reset between test runs
 - Basic CRUD operations should work on all tables
+- Tests should run successfully in both local and CI environments
 
-### PR 2: Authentication System
+### PR 2: Basic JWT Authentication
 
-**Summary:** Implement user authentication with Google OAuth and session management.
+**Summary:** Implement JWT-based authentication with cookie management and anonymous users.
 
 **Tasks:**
 
-- Create API routes for authentication (/api/auth/\*)
-- Implement session cookie management
-- Create anonymous user when no cookie is present
-- Return user object when valid cookie is provided
-- Add Google OAuth integration
+- Add minimal dependencies (jsonwebtoken only)
+- Create API routes for basic authentication (/api/auth/\*)
+- Implement JWT generation and validation functions
+- Store JWTs in HTTP-only cookies for security
+- Create anonymous user when no valid JWT is present
+- Return user object when valid JWT is provided
 - Implement middleware for protected routes
 
 **Tests:**
 
-- `/api/auth/me` should return anonymous user if no cookie
-- `/api/auth/me` should return user object if valid cookie
-- `/api/auth/login` should redirect to Google login
-- `/api/auth/google-callback` should verify Google login and update user
-- `/api/auth/logout` should clear session cookie
+- `/api/auth/me` should return anonymous user if no JWT
+- `/api/auth/me` should return user object if valid JWT
+- JWT verification should properly validate tokens
 - Protected routes should reject unauthenticated requests
+- Authentication middleware should work correctly
 
-### PR 3: Poll Creation and Viewing
+### PR 3: Google OAuth Integration
+
+**Summary:** Add Google OAuth authentication to the existing JWT system.
+
+**Tasks:**
+
+- Implement Google OAuth flow using direct fetch requests (no Passport.js)
+- Create login endpoint that redirects to Google
+- Create callback endpoint to handle Google's response
+- Extract user information from Google profile and create/update user
+- Generate and set JWT after successful authentication
+- Add logout functionality to clear cookies
+
+**Tests:**
+
+- `/api/auth/login` should redirect to Google login
+- OAuth callback should properly handle Google's response
+- User should be created or updated with Google profile information
+- Valid JWT should be set in cookies after successful authentication
+- `/api/auth/logout` should clear authentication cookie
+
+### PR 4: Poll Creation and Viewing
 
 **Summary:** Implement API endpoints for creating and viewing polls.
 
@@ -70,7 +93,7 @@ The roadmap is divided into two phases:
 - Non-authenticated users should not be able to create polls
 - Invalid polls (too few/many options) should be rejected
 
-### PR 4: Voting System
+### PR 5: Voting System
 
 **Summary:** Add the ability for users to vote on polls and retrieve voting statistics.
 
@@ -89,7 +112,7 @@ The roadmap is divided into two phases:
 - Non-authenticated users should not be able to vote
 - Vote counts should update correctly after new votes
 
-### PR 5: Cross-Reference Functionality
+### PR 6: Cross-Reference Functionality
 
 **Summary:** Implement the backend for cross-referencing polls with other polls.
 
@@ -106,7 +129,7 @@ The roadmap is divided into two phases:
 - Multiple levels of cross-referencing should work (nested references)
 - Invalid cross-reference parameters should return appropriate errors
 
-### PR 6: Feed and Search Routes
+### PR 7: Feed and Search Routes
 
 **Summary:** Create endpoints for the poll feed and search functionality.
 
@@ -127,7 +150,7 @@ The roadmap is divided into two phases:
 
 ## Frontend Development
 
-### PR 7: Basic PollCard Component
+### PR 8: Basic PollCard Component
 
 **Summary:** Create the core PollCard component with voting functionality.
 
@@ -146,7 +169,7 @@ The roadmap is divided into two phases:
 - Vote count should display correctly
 - User's selected answer should be highlighted
 
-### PR 8: Cross-Reference UI
+### PR 9: Cross-Reference UI
 
 **Summary:** Enhance PollCard with cross-reference functionality.
 
@@ -166,7 +189,7 @@ The roadmap is divided into two phases:
 - Clicking on sub-charts should update the main chart
 - Cross-reference selector should work correctly
 
-### PR 9: Feed Implementation
+### PR 10: Feed Implementation
 
 **Summary:** Create the landing page with an infinite scroll feed of polls.
 
@@ -184,7 +207,7 @@ The roadmap is divided into two phases:
 - Each poll in feed should be interactive
 - Loading states should display appropriately
 
-### PR 10: Header Component
+### PR 11: Header Component
 
 **Summary:** Create the header with logo, search, and user controls.
 
@@ -203,7 +226,7 @@ The roadmap is divided into two phases:
 - Avatar should appear for logged-in users
 - Create poll button should be visible for logged-in users
 
-### PR 11: Poll Creation Screen
+### PR 12: Poll Creation Screen
 
 **Summary:** Implement the interface for creating new polls.
 
@@ -222,7 +245,7 @@ The roadmap is divided into two phases:
 - Successful creation should redirect to new poll
 - Errors should display appropriate messages
 
-### PR 12: User Profile (Non-Owner View)
+### PR 13: User Profile (Non-Owner View)
 
 **Summary:** Create the public user profile view.
 
@@ -238,7 +261,7 @@ The roadmap is divided into two phases:
 - Created polls should display in feed
 - Pagination should work for polls feed
 
-### PR 13: User Profile (Owner View)
+### PR 14: User Profile (Owner View)
 
 **Summary:** Enhance user profile with owner-specific functionality.
 
