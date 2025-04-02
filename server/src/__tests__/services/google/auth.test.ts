@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+import * as nodeFetch from 'node-fetch';
 import {
   exchangeCodeForTokens,
   getUserInfo,
@@ -10,6 +10,9 @@ import {
 
 // Mock node-fetch
 jest.mock('node-fetch');
+const mockedFetch = nodeFetch.default as jest.MockedFunction<
+  typeof nodeFetch.default
+>;
 const { Response } = jest.requireActual('node-fetch');
 
 describe('Google OAuth Authentication', () => {
@@ -28,14 +31,14 @@ describe('Google OAuth Authentication', () => {
       };
 
       // Mock the fetch response
-      fetch.mockResolvedValueOnce(
+      mockedFetch.mockResolvedValueOnce(
         new Response(JSON.stringify(mockTokenResponse), { status: 200 })
       );
 
       const result = await exchangeCodeForTokens('test-auth-code');
 
       // Check that fetch was called with correct parameters
-      expect(fetch).toHaveBeenCalledWith(
+      expect(mockedFetch).toHaveBeenCalledWith(
         GOOGLE_TOKEN_URL,
         expect.objectContaining({
           method: 'POST',
@@ -52,7 +55,7 @@ describe('Google OAuth Authentication', () => {
 
     it('should throw error if token request fails', async () => {
       // Mock a failed response
-      fetch.mockResolvedValueOnce(
+      mockedFetch.mockResolvedValueOnce(
         new Response('Invalid authorization code', { status: 400 })
       );
 
@@ -75,14 +78,14 @@ describe('Google OAuth Authentication', () => {
       };
 
       // Mock the fetch response
-      fetch.mockResolvedValueOnce(
+      mockedFetch.mockResolvedValueOnce(
         new Response(JSON.stringify(mockUserInfo), { status: 200 })
       );
 
       const result = await getUserInfo('test-access-token');
 
       // Check that fetch was called with correct parameters
-      expect(fetch).toHaveBeenCalledWith(
+      expect(mockedFetch).toHaveBeenCalledWith(
         GOOGLE_USER_INFO_URL,
         expect.objectContaining({
           headers: {
@@ -97,7 +100,7 @@ describe('Google OAuth Authentication', () => {
 
     it('should throw error if user info request fails', async () => {
       // Mock a failed response
-      fetch.mockResolvedValueOnce(
+      mockedFetch.mockResolvedValueOnce(
         new Response('Invalid token', { status: 401 })
       );
 

@@ -275,9 +275,12 @@ describe('Auth Routes', () => {
 
       // Should clear state cookie and set auth cookie
       expect(response.headers['set-cookie']).toBeDefined();
-      const cookies = response.headers['set-cookie'].join(';');
-      expect(cookies).toContain('oauth_state=;');
-      expect(cookies).toContain('auth_token=test-jwt-token');
+      // Convert set-cookie headers to string for easier assertions
+      const cookieHeader = Array.isArray(response.headers['set-cookie'])
+        ? response.headers['set-cookie'].join(';')
+        : String(response.headers['set-cookie']);
+      expect(cookieHeader).toContain('oauth_state=;');
+      expect(cookieHeader).toContain('auth_token=test-jwt-token');
 
       // Should have called the right functions
       expect(exchangeCodeForTokens).toHaveBeenCalledWith('test-code');
