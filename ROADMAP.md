@@ -59,19 +59,37 @@ The roadmap is divided into two phases:
 **Tasks:**
 
 - Implement Google OAuth flow using direct fetch requests (no Passport.js)
-- Create login endpoint that redirects to Google
+- Create login endpoint that redirects to Google with CSRF protection
+  - Generate and store cryptographically secure state parameter in cookies
+  - Include required OAuth scopes (email, profile)
 - Create callback endpoint to handle Google's response
-- Extract user information from Google profile and create/update user
+  - Validate state parameter to prevent CSRF attacks
+  - Exchange authorization code for access tokens
+  - Handle error cases with appropriate redirects
+- Update database to support OAuth authentication
+  - Create migration to add Google ID field to users table
+  - Ensure Google ID is unique and properly indexed
+- Extract user information from Google profile and handle account linking
+  - Check for existing accounts by Google ID first, then by email
+  - Link existing accounts when appropriate
+  - Create new accounts for first-time users
 - Generate and set JWT after successful authentication
-- Add logout functionality to clear cookies
+  - Maintain the same cookie-based authentication used in PR 2
+  - Redirect users back to frontend with success indication
+- Add appropriate error handling for all OAuth failure scenarios
 
 **Tests:**
 
-- `/api/auth/login` should redirect to Google login
-- OAuth callback should properly handle Google's response
-- User should be created or updated with Google profile information
+- `/api/auth/google` should redirect to Google login with state parameter
+- OAuth callback should validate state parameter for security
+- OAuth callback should properly handle Google's response and exchange code for tokens
+- System should properly create new users from Google profiles
+- System should properly link existing accounts with Google logins
+- System should handle all error cases (invalid code, network errors, etc.)
 - Valid JWT should be set in cookies after successful authentication
+- Appropriate authentication cookies should be set securely
 - `/api/auth/logout` should clear authentication cookie
+- Tests should be environment-agnostic and work in both local and CI
 
 ### PR 4: Poll Creation and Viewing
 
