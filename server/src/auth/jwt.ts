@@ -32,8 +32,8 @@ export function verifyToken(
       email: string | null;
       name: string | null;
     };
-  } catch (_) {
-    // Token validation failed
+  } catch {
+    // Token validation failed - no need to capture the error
     return null;
   }
 }

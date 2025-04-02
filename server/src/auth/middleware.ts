@@ -46,8 +46,8 @@ export function authenticate(options: { requireAuth?: boolean } = {}) {
           const user = userRepository.getById(payload.id);
           req.user = user;
           return next();
-        } catch (_) {
-          // User not found, token may be invalid
+        } catch {
+          // User not found, token may be invalid - no need to capture the error
           if (requireAuth) {
             return res
               .status(401)
