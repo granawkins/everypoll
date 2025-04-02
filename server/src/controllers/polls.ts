@@ -5,10 +5,11 @@ import { getRepositories } from '../database';
  * Create a new poll
  * Requires authentication
  */
+ 
 export function createPoll(
   req: Request,
   res: Response,
-  _next: NextFunction
+  next: NextFunction
 ): void {
   try {
     const { question, answers } = req.body;
@@ -66,10 +67,11 @@ export function createPoll(
  * Get a poll by ID
  * Includes answers, author info, and vote counts if available
  */
+ 
 export function getPollById(
   req: Request,
   res: Response,
-  _next: NextFunction
+  next: NextFunction
 ): void {
   try {
     const { id } = req.params;
