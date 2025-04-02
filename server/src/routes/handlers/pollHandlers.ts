@@ -8,6 +8,7 @@ import { getRepositories } from '../../database';
 export function handleCreatePoll(
   req: Request,
   res: Response,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _next: NextFunction
 ): void {
   try {
@@ -66,6 +67,7 @@ export function handleCreatePoll(
 export function handleGetPollById(
   req: Request,
   res: Response,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   _next: NextFunction
 ): void {
   try {
