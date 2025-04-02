@@ -75,15 +75,51 @@ The roadmap is divided into two phases:
 
 ### PR 4: Poll Creation and Viewing
 
-**Summary:** Implement API endpoints for creating and viewing polls.
+**Summary:** Implement API endpoints for creating and viewing polls with proper TypeScript integration.
+
+**Architecture:**
+
+- Follow a layered architecture pattern:
+  - **Controllers**: Handle HTTP concerns, don't return anything (void)
+  - **Services**: Contain business logic, return data (optional layer)
+  - **Repositories**: Handle data access (already implemented)
 
 **Tasks:**
 
-- Create endpoint to add polls and answers to database
+- Create poll controllers with proper Express middleware signatures:
+
+  ```typescript
+  // Proper pattern for Express controllers in TypeScript
+  const createPoll = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      // Logic here, sending response via res.json()
+    } catch (error) {
+      next(error); // Pass errors to Express error handler
+    }
+  };
+  ```
+
 - Implement validation for poll creation (2-10 answers)
-- Create endpoint to get poll details by ID
+- Create endpoint to get poll details by ID with proper error handling
 - Include author information in poll responses
-- Ensure polls can only be created by authenticated users
+- Setup route protection using the existing auth middleware
+- Add appropriate error handling throughout
+
+**Test Setup:**
+
+- Ensure proper database isolation between tests:
+  ```typescript
+  // In beforeEach of test files
+  beforeEach(() => {
+    initializeTestDatabase(); // Reset database for clean state
+  });
+  ```
+- Test unique constraint violations by using unique test data
+- Use unique data in each test to prevent test interference
 
 **Tests:**
 
@@ -91,6 +127,7 @@ The roadmap is divided into two phases:
 - GET poll by ID should return complete poll with answers and author info
 - Non-authenticated users should not be able to create polls
 - Invalid polls (too few/many options) should be rejected
+- Request with malformed data should return appropriate error responses
 
 ### PR 5: Voting System
 
