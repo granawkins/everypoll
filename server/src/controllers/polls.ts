@@ -8,7 +8,7 @@ import { getRepositories } from '../database';
 export function createPoll(
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void {
   try {
     const { question, answers } = req.body;
@@ -69,7 +69,7 @@ export function createPoll(
 export function getPollById(
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void {
   try {
     const { id } = req.params;
