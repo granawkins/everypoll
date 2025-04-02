@@ -5,16 +5,24 @@ import { authenticate, requireAuth } from '../middleware/auth';
 const router = express.Router();
 
 // Create route handler functions that explicitly match Express's expectations
-const createPollHandler = (req: Request, res: Response, next: NextFunction) => {
+const createPollHandler = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
   createPoll(req, res, next);
+  // Explicitly return nothing to satisfy TypeScript
+  return;
 };
 
 const getPollByIdHandler = (
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+): void => {
   getPollById(req, res, next);
+  // Explicitly return nothing to satisfy TypeScript
+  return;
 };
 
 /**
