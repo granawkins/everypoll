@@ -1,16 +1,12 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { getRepositories } from '../database';
 
 /**
  * Create a new poll
  * Requires authentication
  */
- 
-export function createPoll(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
+
+export function createPoll(req: Request, res: Response): void {
   try {
     const { question, answers } = req.body;
     const userId = req.user?.id;
@@ -67,12 +63,8 @@ export function createPoll(
  * Get a poll by ID
  * Includes answers, author info, and vote counts if available
  */
- 
-export function getPollById(
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void {
+
+export function getPollById(req: Request, res: Response): void {
   try {
     const { id } = req.params;
 
