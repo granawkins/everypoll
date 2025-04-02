@@ -3,7 +3,7 @@
 .mentat/logs
 **/package-lock.json
 
-# SQLite database files
-data/*.db
-data/*.sqlite
-data/*.sqlite3
+# SQLite database files - ignore anywhere in the repo
+**/*.db
+**/*.sqlite
+**/*.sqlite3
