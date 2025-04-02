@@ -12,7 +12,7 @@ const router = express.Router();
 // @ts-expect-error - Specifically expecting TypeScript error for Express handler compatibility
 router.post('/', authenticate, requireAuth, createPoll);
 
-// @ts-expect-error - Specifically expecting TypeScript error for Express handler compatibility
+// Only the POST route has TypeScript errors in CI, no directive needed here
 router.get('/:id', authenticate, getPollById);
 
 export default router;
