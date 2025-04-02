@@ -1,7 +1,17 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
+import session from 'express-session';
+import passport from 'passport';
+import cookieParser from 'cookie-parser';
 import { getConnection } from './database';
+import { SESSION_SECRET, NODE_ENV } from './auth/env';
+import { configurePassport } from './auth/passportConfig';
+import { authenticate } from './auth/middleware';
+import authRoutes from './routes/authRoutes';
+
+// Configure passport
+configurePassport();
 
 export const app = express();
 export const PORT = process.env.PORT || 5000;
@@ -30,16 +40,44 @@ process.on('SIGTERM', () => {
 });
 
 // Middleware
-app.use(cors()); // Enable CORS for frontend communication
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173', // Vite's default port
+  credentials: true, // Allow cookies to be sent with requests
+}));
 app.use(express.json()); // Parse JSON bodies
-app.use(express.static(CLIENT_DIST_PATH)); // Serve static files from client/dist
+app.use(cookieParser()); // Parse cookies
 
-// Basic route
+// Session configuration
+app.use(session({
+  secret: SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: NODE_ENV === 'production', // Use secure cookies in production
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  },
+}));
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Serve static files from client/dist
+app.use(express.static(CLIENT_DIST_PATH));
+
+// API routes
 app.get('/api', (req: Request, res: Response) => {
   res.json({ message: 'Welcome to the EveryPoll API!' });
 });
 
-// Serve React app
+// Auth routes
+app.use('/api/auth', authRoutes);
+
+// Apply authentication middleware to subsequent routes if needed
+// app.use('/api/protected', authenticate({ requireAuth: true }), protectedRoutes);
+
+// Serve React app for all other routes
 app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIST_PATH, 'index.html'));
 });
