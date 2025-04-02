@@ -1,4 +1,4 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { getRepositories } from '../database';
 
 /**
@@ -7,8 +7,7 @@ import { getRepositories } from '../database';
  */
 export const createPoll = async (
   req: Request,
-  res: Response,
-  next: NextFunction
+  res: Response
 ): Promise<void> => {
   try {
     const { question, answers } = req.body;
@@ -67,8 +66,7 @@ export const createPoll = async (
  */
 export const getPollById = async (
   req: Request,
-  res: Response,
-  next: NextFunction
+  res: Response
 ): Promise<void> => {
   try {
     const { id } = req.params;
