@@ -9,10 +9,10 @@ import { authenticate, requireAuth } from '../middleware/auth';
 const router = express.Router();
 
 // Routes to enable tests to pass
-// @ts-ignore - Specifically ignoring TypeScript error for Express handler compatibility
+// @ts-expect-error - Specifically expecting TypeScript error for Express handler compatibility
 router.post('/', authenticate, requireAuth, createPoll);
 
-// @ts-ignore - Specifically ignoring TypeScript error for Express handler compatibility
+// @ts-expect-error - Specifically expecting TypeScript error for Express handler compatibility
 router.get('/:id', authenticate, getPollById);
 
 export default router;
