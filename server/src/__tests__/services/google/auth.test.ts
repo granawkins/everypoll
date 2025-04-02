@@ -1,4 +1,3 @@
-import * as nodeFetch from 'node-fetch';
 import {
   exchangeCodeForTokens,
   getUserInfo,
@@ -8,12 +7,39 @@ import {
   GOOGLE_USER_INFO_URL,
 } from '../../../services/google/config';
 
-// Mock node-fetch
-jest.mock('node-fetch');
-const mockedFetch = nodeFetch.default as jest.MockedFunction<
-  typeof nodeFetch.default
->;
-const { Response } = jest.requireActual('node-fetch');
+// Mock global fetch
+const mockedFetch = jest.fn();
+// Check if fetch is available globally (Node.js v18+)
+if (typeof global.fetch === 'undefined') {
+  // Polyfill fetch for test environment if needed
+  global.fetch = mockedFetch as unknown as typeof fetch;
+} else {
+  // Mock the existing global fetch
+  global.fetch = mockedFetch as unknown as typeof fetch;
+}
+
+// Create a simple Response class for tests
+class MockResponse {
+  private status: number;
+  private body: string;
+
+  constructor(body: string, { status = 200 } = {}) {
+    this.status = status;
+    this.body = body;
+  }
+
+  get ok() {
+    return this.status >= 200 && this.status < 300;
+  }
+
+  json() {
+    return Promise.resolve(JSON.parse(this.body));
+  }
+
+  text() {
+    return Promise.resolve(this.body);
+  }
+}
 
 describe('Google OAuth Authentication', () => {
   beforeEach(() => {
@@ -32,7 +58,7 @@ describe('Google OAuth Authentication', () => {
 
       // Mock the fetch response
       mockedFetch.mockResolvedValueOnce(
-        new Response(JSON.stringify(mockTokenResponse), { status: 200 })
+        new MockResponse(JSON.stringify(mockTokenResponse), { status: 200 })
       );
 
       const result = await exchangeCodeForTokens('test-auth-code');
@@ -56,7 +82,7 @@ describe('Google OAuth Authentication', () => {
     it('should throw error if token request fails', async () => {
       // Mock a failed response
       mockedFetch.mockResolvedValueOnce(
-        new Response('Invalid authorization code', { status: 400 })
+        new MockResponse('Invalid authorization code', { status: 400 })
       );
 
       await expect(exchangeCodeForTokens('invalid-code')).rejects.toThrow(
@@ -79,7 +105,7 @@ describe('Google OAuth Authentication', () => {
 
       // Mock the fetch response
       mockedFetch.mockResolvedValueOnce(
-        new Response(JSON.stringify(mockUserInfo), { status: 200 })
+        new MockResponse(JSON.stringify(mockUserInfo), { status: 200 })
       );
 
       const result = await getUserInfo('test-access-token');
@@ -101,7 +127,7 @@ describe('Google OAuth Authentication', () => {
     it('should throw error if user info request fails', async () => {
       // Mock a failed response
       mockedFetch.mockResolvedValueOnce(
-        new Response('Invalid token', { status: 401 })
+        new MockResponse('Invalid token', { status: 401 })
       );
 
       await expect(getUserInfo('invalid-token')).rejects.toThrow(
