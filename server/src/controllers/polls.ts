@@ -1,12 +1,17 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { getRepositories } from '../database';
 
 /**
  * Create a new poll
  * @param req Request with poll data in body
  * @param res Response
+ * @param next Next function
  */
-export function createPoll(req: Request, res: Response): void {
+export function createPoll(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
   if (!req.user) {
     res.status(500).json({ error: 'User not available' });
     return;
@@ -60,8 +65,13 @@ export function createPoll(req: Request, res: Response): void {
  * Get a poll by ID with answers and author information
  * @param req Request with poll ID in params
  * @param res Response
+ * @param next Next function
  */
-export function getPollById(req: Request, res: Response): void {
+export function getPollById(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
   const { id } = req.params;
 
   if (!id) {

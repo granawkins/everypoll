@@ -1,7 +1,6 @@
 import express from 'express';
 import { createPoll, getPollById } from '../controllers/polls';
 import { authenticate, requireAuth } from '../middleware/auth';
-import { wrapController } from '../utils/controllerUtils';
 
 const router = express.Router();
 
@@ -10,13 +9,13 @@ const router = express.Router();
  * Create a new poll
  * Requires authentication
  */
-router.post('/', authenticate, requireAuth, wrapController(createPoll));
+router.post('/', authenticate, requireAuth, createPoll);
 
 /**
  * GET /api/polls/:id
  * Get a poll by ID with answers and author information
  * Authentication optional
  */
-router.get('/:id', authenticate, wrapController(getPollById));
+router.get('/:id', authenticate, getPollById);
 
 export default router;
