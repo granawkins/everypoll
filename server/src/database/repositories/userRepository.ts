@@ -16,17 +16,22 @@ export class UserRepository {
    * Create a new user
    * @param email Optional email address
    * @param name Optional display name
+   * @param googleId Optional Google ID for OAuth
    * @returns The created user
    */
-  create(email: string | null = null, name: string | null = null): User {
+  create(
+    email: string | null = null,
+    name: string | null = null,
+    googleId: string | null = null
+  ): User {
     const id = uuidv4();
 
     const stmt = this.db.prepare(`
-      INSERT INTO users (id, email, name)
-      VALUES (?, ?, ?)
+      INSERT INTO users (id, email, name, google_id)
+      VALUES (?, ?, ?, ?)
     `);
 
-    stmt.run(id, email, name);
+    stmt.run(id, email, name, googleId);
 
     return this.getById(id);
   }
@@ -60,13 +65,24 @@ export class UserRepository {
   }
 
   /**
+   * Get a user by Google ID
+   * @param googleId Google ID from OAuth
+   * @returns User object or null if not found
+   */
+  getByGoogleId(googleId: string): User | null {
+    const stmt = this.db.prepare('SELECT * FROM users WHERE google_id = ?');
+    return stmt.get(googleId) as User | null;
+  }
+
+  /**
    * Update a user's information
    * @param id User ID
    * @param email New email (optional)
    * @param name New name (optional)
+   * @param googleId New Google ID (optional)
    * @returns Updated user object
    */
-  update(id: string, email?: string, name?: string): User {
+  update(id: string, email?: string, name?: string, googleId?: string): User {
     // Build the update statement dynamically based on provided fields
     const updates: string[] = [];
     const params: (string | null)[] = [];
@@ -79,6 +95,11 @@ export class UserRepository {
     if (name !== undefined) {
       updates.push('name = ?');
       params.push(name);
+    }
+
+    if (googleId !== undefined) {
+      updates.push('google_id = ?');
+      params.push(googleId);
     }
 
     if (updates.length === 0) {

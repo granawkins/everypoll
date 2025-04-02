@@ -6,6 +6,7 @@ export interface User {
   email: string | null;
   name: string | null;
   created_at: string;
+  google_id?: string | null;
 }
 
 // Poll model

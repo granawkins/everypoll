@@ -1,5 +1,11 @@
 import express from 'express';
-import { getCurrentUser, login, logout } from '../controllers/auth';
+import {
+  getCurrentUser,
+  login,
+  logout,
+  googleLogin,
+  googleCallback,
+} from '../controllers/auth';
 import { authenticate } from '../middleware/auth';
 
 const router = express.Router();
@@ -13,7 +19,7 @@ router.get('/me', authenticate, getCurrentUser);
 
 /**
  * POST /api/auth/login
- * Simple login endpoint (will be replaced with Google OAuth in PR3)
+ * Simple login endpoint for testing purposes
  * Accepts email and name in request body
  * Creates user if doesn't exist
  */
@@ -24,5 +30,19 @@ router.post('/login', login);
  * Clears auth cookie
  */
 router.post('/logout', logout);
+
+/**
+ * GET /api/auth/google
+ * Redirects user to Google OAuth login page
+ */
+router.get('/google', googleLogin);
+
+/**
+ * GET /api/auth/google/callback
+ * Handles callback from Google OAuth
+ * Creates or updates user with Google profile info
+ * Sets JWT in cookies and redirects to frontend
+ */
+router.get('/google/callback', googleCallback);
 
 export default router;

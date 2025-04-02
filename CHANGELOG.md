@@ -20,3 +20,14 @@
 - Created authentication routes (/api/auth/me, /api/auth/login, /api/auth/logout)
 - Added middleware for protecting routes that require authentication
 - Included comprehensive tests for all authentication components
+
+## PR 3: Google OAuth Integration
+
+- Implemented Google OAuth authentication flow with authorization and token endpoints
+- Created database migration to add Google ID field to user accounts
+- Added CSRF protection with cryptographically secure state parameters
+- Enhanced user repository with ability to find and link Google accounts
+- Updated user models to support Google profile information
+- Added authentication flow to support both new and returning Google users
+- Used built-in Node.js fetch API for external HTTP requests
+- Created comprehensive tests for the OAuth authentication process
