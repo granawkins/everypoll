@@ -4,10 +4,18 @@ import { authenticate, requireAuth } from '../middleware/auth';
 
 const router = express.Router();
 
+// Define proper type for controller functions
+type ControllerFunction = (
+  req: Request,
+  res: Response,
+  next?: NextFunction
+) => Promise<void> | void;
+
 // Create Express-compatible handler wrappers
 const asyncHandler =
-  (fn: Function) => (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
+  (fn: ControllerFunction) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    Promise.resolve(fn(req, res)).catch(next);
   };
 
 /**
