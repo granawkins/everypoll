@@ -5,6 +5,7 @@ import { Request, Response, NextFunction, RequestHandler } from 'express';
  * This isolates controller logic from Express type requirements
  */
 export function adaptController(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   controllerFn: (req: Request, res: Response, next: NextFunction) => any
 ): RequestHandler {
   return (req: Request, res: Response, next: NextFunction): void => {
