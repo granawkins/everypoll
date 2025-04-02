@@ -7,7 +7,8 @@ import cookieParser from 'cookie-parser';
 import { getConnection } from './database';
 import { SESSION_SECRET, NODE_ENV } from './auth/env';
 import { configurePassport } from './auth/passportConfig';
-import { authenticate } from './auth/middleware';
+// authenticate middleware is imported here but used in commented code below
+// import { authenticate } from './auth/middleware';
 import authRoutes from './routes/authRoutes';
 
 // Configure passport

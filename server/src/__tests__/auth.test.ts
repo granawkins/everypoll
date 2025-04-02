@@ -1,19 +1,25 @@
 import request from 'supertest';
-import express from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { app } from '../app';
 import { getRepositories } from '../database';
 import { initializeTestDatabase } from '../database/connection';
 import { generateToken } from '../auth/jwt';
 
-// Mock passport authentication
+// Mock passport authentication with proper types
 jest.mock('passport', () => {
   return {
-    authenticate: jest.fn(() => (req: any, res: any, next: any) => {
-      // Just let all requests through for testing
-      next();
-    }),
-    initialize: jest.fn(() => (req: any, res: any, next: any) => next()),
-    session: jest.fn(() => (req: any, res: any, next: any) => next()),
+    authenticate: jest.fn(
+      () => (req: Request, res: Response, next: NextFunction) => {
+        // Just let all requests through for testing
+        next();
+      }
+    ),
+    initialize: jest.fn(
+      () => (req: Request, res: Response, next: NextFunction) => next()
+    ),
+    session: jest.fn(
+      () => (req: Request, res: Response, next: NextFunction) => next()
+    ),
     serializeUser: jest.fn((fn) => fn({}, () => {})),
     deserializeUser: jest.fn((fn) => fn('', () => {})),
     use: jest.fn(), // Mock for passport.use method

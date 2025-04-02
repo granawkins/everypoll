@@ -6,12 +6,13 @@ import { getRepositories, User } from '../database';
 import { verifyToken } from './jwt';
 
 // Extend Express Request interface to include user property
-declare global {
-  namespace Express {
-    interface Request {
-      user?: User;
-      isAuthenticated: () => boolean;
-    }
+// Use module augmentation instead of global namespace
+import 'express';
+declare module 'express' {
+  interface Request {
+    user?: User;
+    isAuthenticated: () => boolean;
+    logoutError?: boolean; // Added for test purposes
   }
 }
 
@@ -45,7 +46,7 @@ export function authenticate(options: { requireAuth?: boolean } = {}) {
           const user = userRepository.getById(payload.id);
           req.user = user;
           return next();
-        } catch (error) {
+        } catch (_) {
           // User not found, token may be invalid
           if (requireAuth) {
             return res
