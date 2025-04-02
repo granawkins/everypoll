@@ -10,6 +10,7 @@ import { getRepositories } from '../database';
 export function createPoll(
   req: Request,
   res: Response,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   next: NextFunction
 ): void {
   if (!req.user) {
@@ -70,6 +71,7 @@ export function createPoll(
 export function getPollById(
   req: Request,
   res: Response,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   next: NextFunction
 ): void {
   const { id } = req.params;
