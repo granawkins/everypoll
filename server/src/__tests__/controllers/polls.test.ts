@@ -33,14 +33,18 @@ jest.mock('../../database', () => {
         }),
       },
       pollRepository: {
-        create: jest.fn().mockImplementation((authorId, question, answers) => ({
-          poll: { ...mockPoll, author_id: authorId, question },
-          answers: answers.map((text, i) => ({
-            id: `answer-${i + 1}`,
-            poll_id: 'test-poll-id',
-            text,
-          })),
-        })),
+        create: jest
+          .fn()
+          .mockImplementation(
+            (authorId: string, question: string, answers: string[]) => ({
+              poll: { ...mockPoll, author_id: authorId, question },
+              answers: answers.map((text: string, i: number) => ({
+                id: `answer-${i + 1}`,
+                poll_id: 'test-poll-id',
+                text,
+              })),
+            })
+          ),
         getById: jest.fn().mockImplementation((id) => {
           if (id === 'test-poll-id') return mockPoll;
           return null;

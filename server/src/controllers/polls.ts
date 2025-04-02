@@ -6,16 +6,18 @@ import { getRepositories } from '../database';
  * @param req Request with poll data in body
  * @param res Response
  */
-export function createPoll(req: Request, res: Response) {
+export function createPoll(req: Request, res: Response): void {
   if (!req.user) {
-    return res.status(500).json({ error: 'User not available' });
+    res.status(500).json({ error: 'User not available' });
+    return;
   }
 
   const { question, answers } = req.body;
 
   // Validate input
   if (!question || typeof question !== 'string') {
-    return res.status(400).json({ error: 'Question is required' });
+    res.status(400).json({ error: 'Question is required' });
+    return;
   }
 
   if (
@@ -24,16 +26,16 @@ export function createPoll(req: Request, res: Response) {
     answers.length < 2 ||
     answers.length > 10
   ) {
-    return res
+    res
       .status(400)
       .json({ error: 'Between 2 and 10 answer options are required' });
+    return;
   }
 
   // Ensure all answers are strings
   if (!answers.every((answer) => typeof answer === 'string' && answer.trim())) {
-    return res
-      .status(400)
-      .json({ error: 'All answers must be non-empty strings' });
+    res.status(400).json({ error: 'All answers must be non-empty strings' });
+    return;
   }
 
   try {
@@ -59,11 +61,12 @@ export function createPoll(req: Request, res: Response) {
  * @param req Request with poll ID in params
  * @param res Response
  */
-export function getPollById(req: Request, res: Response) {
+export function getPollById(req: Request, res: Response): void {
   const { id } = req.params;
 
   if (!id) {
-    return res.status(400).json({ error: 'Poll ID is required' });
+    res.status(400).json({ error: 'Poll ID is required' });
+    return;
   }
 
   try {
@@ -71,7 +74,8 @@ export function getPollById(req: Request, res: Response) {
     const poll = pollRepository.getById(id);
 
     if (!poll) {
-      return res.status(404).json({ error: 'Poll not found' });
+      res.status(404).json({ error: 'Poll not found' });
+      return;
     }
 
     // Get poll answers
