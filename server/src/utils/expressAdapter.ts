@@ -4,8 +4,10 @@ import { Request, Response, NextFunction, RequestHandler } from 'express';
  * Creates an Express-compatible middleware from any function
  * Uses a more aggressive type approach that's guaranteed to work with Express
  */
-// eslint-disable-next-line @typescript-eslint/ban-types
-export const adaptController = (controllerFn: Function): RequestHandler => {
+export const adaptController = (
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  controllerFn: (...args: any[]) => any
+): RequestHandler => {
   // Use explicit type assertion to guarantee TypeScript compatibility
   const handler: RequestHandler = (req, res, next) => {
     try {
