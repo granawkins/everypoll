@@ -1,11 +1,15 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { getRepositories } from '../database';
 
 /**
  * Create a new poll
  * Requires authentication
  */
-export function createPoll(req: Request, res: Response) {
+export function createPoll(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
   try {
     const { question, answers } = req.body;
     const userId = req.user?.id;
@@ -54,6 +58,7 @@ export function createPoll(req: Request, res: Response) {
   } catch (error) {
     console.error('Error creating poll:', error);
     res.status(500).json({ error: 'Failed to create poll' });
+    return;
   }
 }
 
@@ -61,7 +66,11 @@ export function createPoll(req: Request, res: Response) {
  * Get a poll by ID
  * Includes answers, author info, and vote counts if available
  */
-export function getPollById(req: Request, res: Response) {
+export function getPollById(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): void {
   try {
     const { id } = req.params;
 
@@ -120,5 +129,6 @@ export function getPollById(req: Request, res: Response) {
   } catch (error) {
     console.error('Error getting poll:', error);
     res.status(500).json({ error: 'Failed to retrieve poll' });
+    return;
   }
 }
