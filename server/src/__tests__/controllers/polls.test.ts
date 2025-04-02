@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { createPoll, getPollById } from '../../controllers/polls';
-import { getRepositories, User } from '../../database';
+import { User } from '../../database';
 
 // Mock the database repositories
 jest.mock('../../database', () => {

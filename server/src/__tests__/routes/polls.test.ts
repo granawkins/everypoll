@@ -54,7 +54,9 @@ describe('Poll Routes', () => {
       expect(response.body.answers).toHaveLength(pollData.answers.length);
 
       // Check that answer texts match what we sent
-      const answerTexts = response.body.answers.map((a: any) => a.text);
+      const answerTexts = response.body.answers.map(
+        (a: { text: string }) => a.text
+      );
       expect(answerTexts).toEqual(expect.arrayContaining(pollData.answers));
     });
 
@@ -124,11 +126,10 @@ describe('Poll Routes', () => {
     it('should get a poll by ID with answers and author info', async () => {
       // First create a poll
       const { pollRepository } = getRepositories(true);
-      const { poll, answers } = pollRepository.create(
-        testUserId,
-        'Test question?',
-        ['Answer 1', 'Answer 2']
-      );
+      const { poll } = pollRepository.create(testUserId, 'Test question?', [
+        'Answer 1',
+        'Answer 2',
+      ]);
 
       // Then retrieve it
       const response = await request(app).get(`/api/polls/${poll.id}`);
