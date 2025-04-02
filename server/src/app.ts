@@ -1,7 +1,9 @@
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import path from 'path';
+import cookieParser from 'cookie-parser';
 import { getConnection } from './database';
+import authRoutes from './routes/auth';
 
 export const app = express();
 export const PORT = process.env.PORT || 5000;
@@ -30,16 +32,28 @@ process.on('SIGTERM', () => {
 });
 
 // Middleware
-app.use(cors()); // Enable CORS for frontend communication
+app.use(
+  cors({
+    origin:
+      process.env.NODE_ENV === 'production'
+        ? 'https://everypoll.com'
+        : 'http://localhost:5173',
+    credentials: true, // Allow cookies
+  })
+);
 app.use(express.json()); // Parse JSON bodies
+app.use(cookieParser()); // Parse cookies
 app.use(express.static(CLIENT_DIST_PATH)); // Serve static files from client/dist
 
-// Basic route
+// API routes
 app.get('/api', (req: Request, res: Response) => {
   res.json({ message: 'Welcome to the EveryPoll API!' });
 });
 
-// Serve React app
+// Auth routes
+app.use('/api/auth', authRoutes);
+
+// Serve React app (must be last route)
 app.get('*', (req: Request, res: Response) => {
   res.sendFile(path.join(CLIENT_DIST_PATH, 'index.html'));
 });
