@@ -5,7 +5,15 @@ import { createTables } from './schema';
 import { runMigrations } from './migrations';
 
 // Database configuration
-const DB_DIRECTORY = path.join(__dirname, '../../../data');
+// For CI environments, use a writable temp directory to avoid permission issues
+const isCI = process.env.CI === 'true';
+
+// If in CI, use the current directory (which should be writable)
+// Otherwise use the data directory as defined in the project structure
+const DB_DIRECTORY = isCI
+  ? path.join(process.cwd(), 'temp_data')
+  : path.join(__dirname, '../../../data');
+
 const DB_PATH = path.join(DB_DIRECTORY, 'everypoll.db');
 const TEST_DB_PATH = path.join(DB_DIRECTORY, 'everypoll.test.db');
 
