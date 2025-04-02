@@ -89,12 +89,14 @@ A react application.
 ### Conventions
 
 This project will be built and managed primarily using AI. As such:
+
 1. Try to avoid adding dependencies beyond what is specified in this spec. If you must, use popular libraries and always check for the most recent version.
 2. Comment liberally.
 3. Add tests wherever possible.
 
 The project is meant to be 'compiled' into code from this spec and ROADMAP.md. The standard way of compiling:
+
 1. The user asks an AI to 'complete the next step'.
 2. The AI reviews this document, the ROADMAP.md, and the CHANGELOG.md, determines which step is next, implements it and submits a PR. The PR should include an update to the CHANGELOG.md, with a number corresponding to the step of the ROADMAP.md.
 3. The user reviews the PR and gives feedback until it's approved, and proceed to the next step.
-4. Based on the user's feedback, the AI may also choose update the README.md and ROADMAP.md, such that the next time the project is 'compiled', that feedback is already incorporated. 
+4. Based on the user's feedback, the AI may also choose update the README.md and ROADMAP.md, such that the next time the project is 'compiled', that feedback is already incorporated.
