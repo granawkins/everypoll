@@ -9,13 +9,17 @@ const router = express.Router();
  * Create a new poll
  * Requires authentication
  */
-router.post('/', authenticate, requireAuth, createPoll);
+router.post('/', authenticate, requireAuth, (req, res) => {
+  return createPoll(req, res);
+});
 
 /**
  * GET /api/polls/:id
  * Get a poll by ID with its answers, author info, and vote counts
  * Authentication optional (to check if user has voted)
  */
-router.get('/:id', authenticate, getPollById);
+router.get('/:id', authenticate, (req, res) => {
+  return getPollById(req, res);
+});
 
 export default router;
