@@ -3,6 +3,7 @@
 This roadmap outlines the step-by-step development process for building the EveryPoll application. Each step represents one PR that implements specific features with testable functionality at each stage.
 
 The roadmap is divided into two phases:
+
 1. Backend Development (PRs 1-6)
 2. Frontend Development (PRs 7-13)
 
@@ -13,6 +14,7 @@ The roadmap is divided into two phases:
 **Summary:** Set up the SQLite database with all required tables and a migrations system.
 
 **Tasks:**
+
 - Add SQLite as a dependency
 - Create database initialization script that builds the DB if not found
 - Define all tables (Users, Polls, Answers, Votes) in the initialization script
@@ -20,6 +22,7 @@ The roadmap is divided into two phases:
 - Create a testing database setup that reinitializes for tests
 
 **Tests:**
+
 - Database should be created automatically when app initializes
 - All tables should be created with correct schemas
 - Migration system should apply migrations in order
@@ -31,7 +34,8 @@ The roadmap is divided into two phases:
 **Summary:** Implement user authentication with Google OAuth and session management.
 
 **Tasks:**
-- Create API routes for authentication (/api/auth/*)
+
+- Create API routes for authentication (/api/auth/\*)
 - Implement session cookie management
 - Create anonymous user when no cookie is present
 - Return user object when valid cookie is provided
@@ -39,6 +43,7 @@ The roadmap is divided into two phases:
 - Implement middleware for protected routes
 
 **Tests:**
+
 - `/api/auth/me` should return anonymous user if no cookie
 - `/api/auth/me` should return user object if valid cookie
 - `/api/auth/login` should redirect to Google login
@@ -51,6 +56,7 @@ The roadmap is divided into two phases:
 **Summary:** Implement API endpoints for creating and viewing polls.
 
 **Tasks:**
+
 - Create endpoint to add polls and answers to database
 - Implement validation for poll creation (2-10 answers)
 - Create endpoint to get poll details by ID
@@ -58,6 +64,7 @@ The roadmap is divided into two phases:
 - Ensure polls can only be created by authenticated users
 
 **Tests:**
+
 - POST to create poll should validate and store poll with answers
 - GET poll by ID should return complete poll with answers and author info
 - Non-authenticated users should not be able to create polls
@@ -68,12 +75,14 @@ The roadmap is divided into two phases:
 **Summary:** Add the ability for users to vote on polls and retrieve voting statistics.
 
 **Tasks:**
+
 - Create endpoint for recording votes
 - Update poll retrieval endpoint to include vote counts
 - Add logic to check if user has already voted
 - Ensure votes can only be cast by authenticated users
 
 **Tests:**
+
 - POST to vote should record vote in database
 - GET poll should include vote counts for each answer
 - Users should not be able to vote twice on the same poll
@@ -85,11 +94,13 @@ The roadmap is divided into two phases:
 **Summary:** Implement the backend for cross-referencing polls with other polls.
 
 **Tasks:**
+
 - Enhance poll retrieval endpoint to accept cross-reference parameters
 - Implement database queries to filter poll results by cross-referenced poll votes
 - Return segmented results based on cross-referenced poll answers
 
 **Tests:**
+
 - GET poll with cross-reference params should return filtered results
 - Results should segment correctly based on answers from cross-referenced poll
 - Multiple levels of cross-referencing should work (nested references)
@@ -100,12 +111,14 @@ The roadmap is divided into two phases:
 **Summary:** Create endpoints for the poll feed and search functionality.
 
 **Tasks:**
+
 - Implement paginated feed endpoint
 - Add search functionality to feed endpoint
 - Create endpoint for searching polls to cross-reference
 - Include sorting options (newest first by default)
 
 **Tests:**
+
 - GET feed should return paginated list of polls
 - Feed should support pagination parameters
 - Search should return relevant results based on query
@@ -119,12 +132,14 @@ The roadmap is divided into two phases:
 **Summary:** Create the core PollCard component with voting functionality.
 
 **Tasks:**
+
 - Create PollCard component to display poll question and answer options
 - Implement voting functionality that calls the appropriate API
 - Show column chart and vote count after voting
 - Style the component according to application design
 
 **Tests:**
+
 - PollCard should display question and answer buttons
 - Clicking vote should call API and update UI
 - After voting, column chart should display with percentages
@@ -136,6 +151,7 @@ The roadmap is divided into two phases:
 **Summary:** Enhance PollCard with cross-reference functionality.
 
 **Tasks:**
+
 - Add cross-reference search bar after voting
 - Implement selection of polls to cross-reference
 - Create sub-charts for cross-referenced results
@@ -143,6 +159,7 @@ The roadmap is divided into two phases:
 - Display cross-reference text and selector below main question
 
 **Tests:**
+
 - Cross-reference search should appear after voting
 - Selecting a poll should load cross-referenced results
 - Sub-charts should display correctly for each answer option
@@ -154,12 +171,14 @@ The roadmap is divided into two phases:
 **Summary:** Create the landing page with an infinite scroll feed of polls.
 
 **Tasks:**
+
 - Implement landing page with feed of polls
 - Add infinite scroll functionality
 - Connect to feed API endpoint
 - Handle loading states and errors
 
 **Tests:**
+
 - Feed should load and display polls
 - Scrolling should load more polls
 - Each poll in feed should be interactive
@@ -170,12 +189,14 @@ The roadmap is divided into two phases:
 **Summary:** Create the header with logo, search, and user controls.
 
 **Tasks:**
+
 - Create sticky header component
 - Add EveryPoll logo
 - Implement search bar that updates feed results
 - Add login button or user avatar based on login state
 
 **Tests:**
+
 - Header should stick to top of page
 - Search should update feed results
 - Login button should appear for logged-out users
@@ -187,6 +208,7 @@ The roadmap is divided into two phases:
 **Summary:** Implement the interface for creating new polls.
 
 **Tasks:**
+
 - Create poll creation form with dynamic answer fields
 - Implement validation (2-10 answer options)
 - Connect to poll creation API
@@ -194,6 +216,7 @@ The roadmap is divided into two phases:
 - Redirect to new poll after creation
 
 **Tests:**
+
 - Form should allow adding/removing answer options
 - Validation should prevent submission with too few/many answers
 - Successful creation should redirect to new poll
@@ -204,11 +227,13 @@ The roadmap is divided into two phases:
 **Summary:** Create the public user profile view.
 
 **Tasks:**
+
 - Implement user profile page
 - Show user information (name, etc.)
 - Display feed of polls created by user
 
 **Tests:**
+
 - Profile should load user information
 - Created polls should display in feed
 - Pagination should work for polls feed
@@ -218,12 +243,14 @@ The roadmap is divided into two phases:
 **Summary:** Enhance user profile with owner-specific functionality.
 
 **Tasks:**
+
 - Add tabs for "Created" and "Voted" polls
 - Implement logout functionality
 - Show additional user information for the owner
 - Connect to appropriate API endpoints
 
 **Tests:**
+
 - Both tabs should display correct polls
 - Logout button should function correctly
 - Owner should see additional controls/information
