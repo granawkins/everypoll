@@ -1,3 +1,4 @@
+# Background
 This project was created from mentat-template-js, a full-stack Javascript template with Mentat automations. The base stack is componsed of:
 
 ### Client
@@ -29,3 +30,6 @@ The following npm commands are available at the root level. "\*" indicates they 
 - `npm run test`\* - Run tests once
 - `npm run lint` - Run ESLint to check code quality
 - `npm run format` - Run Prettier to format code
+
+# Instructions
+Review the main README.md, ROADMAP.md and CHANGELOG.md files at the beginning of each stage. They provide essential context, instructions and guidelines for the project.
