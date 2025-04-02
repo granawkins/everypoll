@@ -12,12 +12,15 @@ export const NODE_ENV = process.env.NODE_ENV || 'development';
 export const PORT = process.env.PORT || '5000';
 
 // Session
-export const SESSION_SECRET = process.env.SESSION_SECRET || 'dev_session_secret';
+export const SESSION_SECRET =
+  process.env.SESSION_SECRET || 'dev_session_secret';
 
 // Google OAuth
 export const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
 export const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-export const GOOGLE_CALLBACK_URL = process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5000/api/auth/google-callback';
+export const GOOGLE_CALLBACK_URL =
+  process.env.GOOGLE_CALLBACK_URL ||
+  'http://localhost:5000/api/auth/google-callback';
 
 // JWT
 export const JWT_SECRET = process.env.JWT_SECRET || 'dev_jwt_secret';
@@ -29,12 +32,16 @@ if (NODE_ENV === 'production') {
     'SESSION_SECRET',
     'GOOGLE_CLIENT_ID',
     'GOOGLE_CLIENT_SECRET',
-    'JWT_SECRET'
+    'JWT_SECRET',
   ];
 
-  const missingEnvVars = requiredEnvVars.filter(envVar => !process.env[envVar]);
+  const missingEnvVars = requiredEnvVars.filter(
+    (envVar) => !process.env[envVar]
+  );
 
   if (missingEnvVars.length > 0) {
-    throw new Error(`Missing required environment variables: ${missingEnvVars.join(', ')}`);
+    throw new Error(
+      `Missing required environment variables: ${missingEnvVars.join(', ')}`
+    );
   }
 }

@@ -40,24 +40,28 @@ process.on('SIGTERM', () => {
 });
 
 // Middleware
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173', // Vite's default port
-  credentials: true, // Allow cookies to be sent with requests
-}));
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || 'http://localhost:5173', // Vite's default port
+    credentials: true, // Allow cookies to be sent with requests
+  })
+);
 app.use(express.json()); // Parse JSON bodies
 app.use(cookieParser()); // Parse cookies
 
 // Session configuration
-app.use(session({
-  secret: SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: NODE_ENV === 'production', // Use secure cookies in production
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000, // 24 hours
-  },
-}));
+app.use(
+  session({
+    secret: SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: NODE_ENV === 'production', // Use secure cookies in production
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  })
+);
 
 // Initialize Passport
 app.use(passport.initialize());

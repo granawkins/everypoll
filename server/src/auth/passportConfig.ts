@@ -3,7 +3,11 @@
  */
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_CALLBACK_URL } from './env';
+import {
+  GOOGLE_CLIENT_ID,
+  GOOGLE_CLIENT_SECRET,
+  GOOGLE_CALLBACK_URL,
+} from './env';
 import { getRepositories, User } from '../database';
 
 /**
@@ -66,6 +70,8 @@ export function configurePassport(): void {
       )
     );
   } else {
-    console.warn('Google OAuth credentials not found. Google authentication will not be available.');
+    console.warn(
+      'Google OAuth credentials not found. Google authentication will not be available.'
+    );
   }
 }

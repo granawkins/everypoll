@@ -18,7 +18,7 @@ declare global {
 /**
  * Middleware to check if the user is authenticated
  * If not authenticated, either create an anonymous user or return 401
- * 
+ *
  * @param options Configuration options
  * @param options.requireAuth Whether to require authentication (default: false)
  * @returns Express middleware
@@ -48,7 +48,9 @@ export function authenticate(options: { requireAuth?: boolean } = {}) {
         } catch (error) {
           // User not found, token may be invalid
           if (requireAuth) {
-            return res.status(401).json({ error: 'Invalid authentication token' });
+            return res
+              .status(401)
+              .json({ error: 'Invalid authentication token' });
           }
         }
       }

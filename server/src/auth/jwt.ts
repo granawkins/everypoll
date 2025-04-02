@@ -23,9 +23,15 @@ export function generateToken(user: User): string {
  * @param token The token to verify
  * @returns The payload of the token if valid, null otherwise
  */
-export function verifyToken(token: string): { id: string; email: string | null; name: string | null } | null {
+export function verifyToken(
+  token: string
+): { id: string; email: string | null; name: string | null } | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { id: string; email: string | null; name: string | null };
+    return jwt.verify(token, JWT_SECRET) as {
+      id: string;
+      email: string | null;
+      name: string | null;
+    };
   } catch (error) {
     return null;
   }

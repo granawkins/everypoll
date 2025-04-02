@@ -19,10 +19,10 @@ export const getCurrentUser = (req: Request, res: Response) => {
   }
 
   // Return authenticated user
-  return res.json({ 
-    user: req.user, 
+  return res.json({
+    user: req.user,
     isAuthenticated: !!req.user.email,
-    token: generateToken(req.user)
+    token: generateToken(req.user),
   });
 };
 

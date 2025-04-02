@@ -2,7 +2,12 @@
  * Authentication routes
  */
 import express from 'express';
-import { getCurrentUser, googleLogin, googleCallback, logout } from '../auth/controllers';
+import {
+  getCurrentUser,
+  googleLogin,
+  googleCallback,
+  logout,
+} from '../auth/controllers';
 import { authenticate } from '../auth/middleware';
 
 const router = express.Router();
