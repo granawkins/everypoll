@@ -1,9 +1,4 @@
-import express, {
-  Request,
-  Response,
-  NextFunction,
-  RequestHandler,
-} from 'express';
+import express, { RequestHandler } from 'express';
 import { createPoll, getPollById } from '../controllers/polls';
 import { authenticate, requireAuth } from '../middleware/auth';
 
