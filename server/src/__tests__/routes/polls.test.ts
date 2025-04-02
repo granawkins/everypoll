@@ -42,6 +42,14 @@ jest.mock('../../database', () => {
     { id: 'answer2', poll_id: 'test-poll-id', text: 'Answer 2' },
   ];
 
+  const mockVote = {
+    id: 'vote-id',
+    user_id: 'test-user-id',
+    poll_id: 'test-poll-id',
+    answer_id: 'answer1',
+    created_at: new Date().toISOString(),
+  };
+
   return {
     ...jest.requireActual('../../database'),
     getRepositories: jest.fn().mockReturnValue({
@@ -65,6 +73,21 @@ jest.mock('../../database', () => {
         getAnswers: jest.fn().mockReturnValue(mockAnswers),
       },
       voteRepository: {
+        create: jest.fn().mockImplementation((userId, pollId, answerId) => {
+          // Simulate error for already voted case
+          if (
+            userId === 'test-user-id' &&
+            pollId === 'test-poll-id' &&
+            answerId === 'already-voted'
+          ) {
+            throw new Error('User has already voted on this poll');
+          }
+
+          return {
+            ...mockVote,
+            answer_id: answerId,
+          };
+        }),
         countVotesByAnswer: jest.fn().mockReturnValue({
           answer1: 3,
           answer2: 2,
@@ -73,13 +96,7 @@ jest.mock('../../database', () => {
         hasVoted: jest.fn().mockImplementation((userId, pollId) => {
           return userId === 'test-user-id' && pollId === 'test-poll-id';
         }),
-        getUserVote: jest.fn().mockReturnValue({
-          id: 'vote-id',
-          user_id: 'test-user-id',
-          poll_id: 'test-poll-id',
-          answer_id: 'answer1',
-          created_at: new Date().toISOString(),
-        }),
+        getUserVote: jest.fn().mockReturnValue(mockVote),
       },
     }),
   };
@@ -245,6 +262,120 @@ describe('Poll Routes', () => {
 
       expect(response.status).toBe(404);
       expect(response.body.error).toBe('Poll not found');
+    });
+  });
+
+  describe('POST /api/polls/:id/vote', () => {
+    it('should require authentication', async () => {
+      const response = await request(app)
+        .post('/api/polls/test-poll-id/vote')
+        .send({
+          answerId: 'answer1',
+        });
+
+      expect(response.status).toBe(401);
+      expect(response.body.error).toBe('Authentication required');
+    });
+
+    it('should record a vote with valid data', async () => {
+      // Mock jwt verification for this test
+      (jwtService.verifyToken as jest.Mock).mockReturnValueOnce({
+        userId: 'test-user-id',
+      });
+
+      const response = await request(app)
+        .post('/api/polls/test-poll-id/vote')
+        .set('Cookie', ['auth_token=test-jwt-token'])
+        .send({
+          answerId: 'answer2',
+        });
+
+      expect(response.status).toBe(201);
+      expect(response.body).toHaveProperty('vote');
+      expect(response.body).toHaveProperty('votes');
+      expect(response.body.vote.answer_id).toBe('answer2');
+      expect(response.body.votes.total).toBe(5);
+
+      // Verify vote creation was called with correct params
+      const { voteRepository } = getRepositories();
+      expect(voteRepository.create).toHaveBeenCalledWith(
+        'test-user-id',
+        'test-poll-id',
+        'answer2'
+      );
+    });
+
+    it('should return 400 if answerId is missing', async () => {
+      // Mock jwt verification for this test
+      (jwtService.verifyToken as jest.Mock).mockReturnValueOnce({
+        userId: 'test-user-id',
+      });
+
+      const response = await request(app)
+        .post('/api/polls/test-poll-id/vote')
+        .set('Cookie', ['auth_token=test-jwt-token'])
+        .send({});
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Answer ID is required');
+    });
+
+    it('should return 404 for non-existent poll', async () => {
+      // Mock jwt verification for this test
+      (jwtService.verifyToken as jest.Mock).mockReturnValueOnce({
+        userId: 'test-user-id',
+      });
+
+      const response = await request(app)
+        .post('/api/polls/non-existent-poll/vote')
+        .set('Cookie', ['auth_token=test-jwt-token'])
+        .send({
+          answerId: 'answer1',
+        });
+
+      expect(response.status).toBe(404);
+      expect(response.body.error).toBe('Poll not found');
+    });
+
+    it('should return 400 if user has already voted', async () => {
+      // Mock jwt verification for this test
+      (jwtService.verifyToken as jest.Mock).mockReturnValueOnce({
+        userId: 'test-user-id',
+      });
+
+      const response = await request(app)
+        .post('/api/polls/test-poll-id/vote')
+        .set('Cookie', ['auth_token=test-jwt-token'])
+        .send({
+          answerId: 'already-voted',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('User has already voted on this poll');
+    });
+
+    it('should return 400 for invalid answer ID', async () => {
+      // Mock jwt verification for this test
+      (jwtService.verifyToken as jest.Mock).mockReturnValueOnce({
+        userId: 'test-user-id',
+      });
+
+      // Mock pollRepository.getAnswers to simulate the check for valid answers
+      const { pollRepository } = getRepositories();
+      (pollRepository.getAnswers as jest.Mock).mockReturnValueOnce([
+        { id: 'answer1', poll_id: 'test-poll-id', text: 'Answer 1' },
+        { id: 'answer2', poll_id: 'test-poll-id', text: 'Answer 2' },
+      ]);
+
+      const response = await request(app)
+        .post('/api/polls/test-poll-id/vote')
+        .set('Cookie', ['auth_token=test-jwt-token'])
+        .send({
+          answerId: 'invalid-answer-id',
+        });
+
+      expect(response.status).toBe(400);
+      expect(response.body.error).toBe('Invalid answer for this poll');
     });
   });
 });

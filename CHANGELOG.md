@@ -43,3 +43,15 @@
 - Used TypeScript-compatible patterns for Express route handlers
 - Created comprehensive tests for both endpoints
 - Implemented proper error responses for various scenarios (unauthorized, invalid input, not found)
+
+## PR 5: Voting System
+
+- Implemented API endpoint for recording votes (POST /api/polls/:id/vote)
+- Added validation to ensure users can only vote once per poll
+- Added validation to ensure vote is for a valid answer option
+- Enhanced error handling for various voting scenarios
+- Created controller for voting with proper validation and response formatting
+- Protected voting endpoint with authentication middleware
+- Added updated vote counts in response after successful vote
+- Created comprehensive tests for all voting functionality
+- Implemented proper error responses (unauthorized, already voted, invalid answer)

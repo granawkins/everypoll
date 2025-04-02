@@ -122,3 +122,76 @@ export function getPollById(req: Request, res: Response) {
     res.status(500).json({ error: 'Failed to retrieve poll' });
   }
 }
+
+/**
+ * Vote on a poll
+ * Requires authentication
+ */
+export function voteOnPoll(req: Request, res: Response) {
+  try {
+    const { id: pollId } = req.params;
+    const { answerId } = req.body;
+    const userId = req.user?.id;
+
+    // Validate required fields
+    if (!userId) {
+      res.status(500).json({ error: 'User ID not available' });
+      return;
+    }
+
+    if (!pollId) {
+      res.status(400).json({ error: 'Poll ID is required' });
+      return;
+    }
+
+    if (!answerId) {
+      res.status(400).json({ error: 'Answer ID is required' });
+      return;
+    }
+
+    const { pollRepository, voteRepository } = getRepositories();
+
+    // Check if poll exists
+    const poll = pollRepository.getById(pollId);
+    if (!poll) {
+      res.status(404).json({ error: 'Poll not found' });
+      return;
+    }
+
+    // Check if answer belongs to the poll
+    const answers = pollRepository.getAnswers(pollId);
+    const answerExists = answers.some((answer) => answer.id === answerId);
+    if (!answerExists) {
+      res.status(400).json({ error: 'Invalid answer for this poll' });
+      return;
+    }
+
+    try {
+      // Record the vote
+      const vote = voteRepository.create(userId, pollId, answerId);
+
+      // Get updated vote counts
+      const voteCounts = voteRepository.countVotesByAnswer(pollId);
+      const totalVotes = voteRepository.countTotalVotes(pollId);
+
+      // Return successful response
+      res.status(201).json({
+        vote,
+        votes: {
+          total: totalVotes,
+          byAnswer: voteCounts,
+        },
+      });
+    } catch (error) {
+      // Handle case where user has already voted
+      if (error instanceof Error && error.message.includes('already voted')) {
+        res.status(400).json({ error: 'User has already voted on this poll' });
+        return;
+      }
+      throw error; // Re-throw for the outer catch block
+    }
+  } catch (error) {
+    console.error('Error voting on poll:', error);
+    res.status(500).json({ error: 'Failed to record vote' });
+  }
+}
