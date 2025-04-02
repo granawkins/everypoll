@@ -1,9 +1,45 @@
+import Database from 'better-sqlite3';
 import { initializeTestDatabase, getRepositories } from '../database';
 
 describe('Database Tests', () => {
-  // Before each test, initialize a fresh test database
+  // Hold reference to DB connection for proper cleanup
+  let db: Database.Database | null = null;
+
   beforeEach(() => {
-    initializeTestDatabase();
+    try {
+      // Reset the database for each test
+      initializeTestDatabase();
+
+      // Get a connection to use for this test
+      const { db: testDb } = getRepositories(true);
+      db = testDb;
+    } catch (error) {
+      console.error('Error in database test setup:', error);
+      throw error;
+    }
+  });
+
+  afterEach(() => {
+    try {
+      // Close the DB connection after each test
+      if (db) {
+        db.close();
+        db = null;
+      }
+    } catch (error) {
+      console.error('Error in database test cleanup:', error);
+    }
+  });
+
+  // Ensure cleanup after all tests
+  afterAll(() => {
+    try {
+      if (db) {
+        db.close();
+      }
+    } catch (error) {
+      console.error('Error in final database test cleanup:', error);
+    }
   });
 
   describe('User Repository', () => {
