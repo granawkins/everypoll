@@ -20,7 +20,6 @@ The roadmap is divided into two phases:
 - Define all tables (Users, Polls, Answers, Votes) in the initialization script
 - Implement a migrations system for future schema changes
 - Create a testing database setup that reinitializes for tests
-- Ensure CI compatibility using in-memory databases for testing in CI environments
 
 **Tests:**
 
