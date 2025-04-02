@@ -1,25 +1,30 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express, {
+  Request,
+  Response,
+  NextFunction,
+  RequestHandler,
+} from 'express';
 import { createPoll, getPollById } from '../controllers/polls';
 import { authenticate, requireAuth } from '../middleware/auth';
 
 const router = express.Router();
 
 // Create route handler functions that explicitly match Express's expectations
-const createPollHandler = (
+const createPollHandler: RequestHandler = (
   req: Request,
   res: Response,
   next: NextFunction
-): void => {
+) => {
   createPoll(req, res, next);
   // Explicitly return nothing to satisfy TypeScript
   return;
 };
 
-const getPollByIdHandler = (
+const getPollByIdHandler: RequestHandler = (
   req: Request,
   res: Response,
   next: NextFunction
-): void => {
+) => {
   getPollById(req, res, next);
   // Explicitly return nothing to satisfy TypeScript
   return;
@@ -30,13 +35,18 @@ const getPollByIdHandler = (
  * Create a new poll
  * Requires authentication
  */
-router.post('/', authenticate, requireAuth, createPollHandler);
+router.post(
+  '/',
+  authenticate,
+  requireAuth,
+  createPollHandler as RequestHandler
+);
 
 /**
  * GET /api/polls/:id
  * Get a poll by ID with answers and author information
  * Authentication optional
  */
-router.get('/:id', authenticate, getPollByIdHandler);
+router.get('/:id', authenticate, getPollByIdHandler as RequestHandler);
 
 export default router;
