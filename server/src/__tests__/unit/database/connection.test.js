@@ -8,17 +8,13 @@ import {
 import fs from 'fs';
 import path from 'path';
 
-// Define interfaces for query results
-interface QueryResult {
-  result: number;
-}
-interface TableRecord {
-  name: string;
+// Helper functions for database results that work in plain JavaScript
+function getResultValue(result) {
+  return result && result.result ? result.result : 0;
 }
 
-// Helper function for type casting in a way compatible with babel
-function assertType<T>(value: unknown): T {
-  return value as unknown as T;
+function getTableNames(tables) {
+  return tables ? tables.map((t) => t.name) : [];
 }
 
 describe('Database Connection', () => {
@@ -34,21 +30,21 @@ describe('Database Connection', () => {
 
     // Verify database is usable
     const stmt = db.prepare('SELECT 1 + 1 as result');
-    // Use helper to cast the unknown return type to our interface
-    const result = assertType<QueryResult>(stmt.get());
+    const result = stmt.get();
 
-    expect(result.result).toBe(2);
+    expect(getResultValue(result)).toBe(2);
     expect(db.memory).toBe(true);
 
     // Verify tables were created
-    const tables = assertType<TableRecord[]>(
-      db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all()
-    );
+    const tables = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table'")
+      .all();
 
-    expect(tables.map((t) => t.name)).toContain('users');
-    expect(tables.map((t) => t.name)).toContain('polls');
-    expect(tables.map((t) => t.name)).toContain('answers');
-    expect(tables.map((t) => t.name)).toContain('votes');
+    const tableNames = getTableNames(tables);
+    expect(tableNames).toContain('users');
+    expect(tableNames).toContain('polls');
+    expect(tableNames).toContain('answers');
+    expect(tableNames).toContain('votes');
   });
 
   it('should create a process-specific database file', () => {
@@ -63,9 +59,9 @@ describe('Database Connection', () => {
 
     // Verify database is usable
     const stmt = db.prepare('SELECT 1 + 1 as result');
-    const result = assertType<QueryResult>(stmt.get());
+    const result = stmt.get();
 
-    expect(result.result).toBe(2);
+    expect(getResultValue(result)).toBe(2);
 
     // Clean up
     closeConnection(db);
