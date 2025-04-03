@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 import { Poll, Answer } from '../models';
+import { convertSQLiteError, ValidationError } from '../../errors';
 
 /**
  * Repository for poll-related database operations
@@ -26,7 +27,11 @@ export class PollRepository {
   ): { poll: Poll; answers: Answer[] } {
     // Validate number of answers (2-10)
     if (answerTexts.length < 2 || answerTexts.length > 10) {
-      throw new Error('Polls must have between 2 and 10 answer options');
+      throw new ValidationError(
+        'Polls must have between 2 and 10 answer options',
+        'answers',
+        answerTexts.length
+      );
     }
 
     // Start a transaction
@@ -65,7 +70,7 @@ export class PollRepository {
     } catch (error) {
       // Rollback the transaction on error
       this.db.exec('ROLLBACK');
-      throw error;
+      throw convertSQLiteError(error);
     }
   }
 

@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 import { Vote } from '../models';
+import { convertSQLiteError, AlreadyVotedError } from '../../errors';
 
 /**
  * Repository for vote-related database operations
@@ -33,14 +34,15 @@ export class VoteRepository {
 
       return this.getById(id);
     } catch (error: unknown) {
-      // Check if error is due to unique constraint violation
-      if (
-        error instanceof Error &&
-        error.message.includes('UNIQUE constraint failed')
-      ) {
-        throw new Error('User has already voted on this poll');
+      // Convert SQLite error to our custom error types
+      const convertedError = convertSQLiteError(error, { userId, pollId });
+
+      // If it's a unique constraint error, it means the user has already voted
+      if (convertedError instanceof AlreadyVotedError) {
+        throw convertedError;
       }
-      throw error;
+
+      throw convertedError;
     }
   }
 
