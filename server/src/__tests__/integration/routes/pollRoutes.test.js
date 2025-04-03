@@ -1,3 +1,4 @@
+/* global describe, it, beforeAll, afterAll, beforeEach, expect, jest */
 import request from 'supertest';
 import { app } from '../../../app';
 import {
@@ -59,7 +60,7 @@ describe('Poll Routes Integration', () => {
   });
 
   // Create a test user for each test
-  let testUserId: string;
+  let testUserId;
 
   beforeEach(() => {
     const { userRepository } = getRepositories();
@@ -67,7 +68,7 @@ describe('Poll Routes Integration', () => {
     testUserId = user.id;
 
     // Make JWT verification return this user's ID
-    (jwtService.verifyToken as jest.Mock).mockImplementation((token) => {
+    jwtService.verifyToken.mockImplementation((token) => {
       if (token === 'test-jwt-token') {
         return { userId: testUserId };
       }
@@ -133,8 +134,8 @@ describe('Poll Routes Integration', () => {
   });
 
   describe('GET /api/polls/:id and POST /api/polls/:id/vote', () => {
-    let pollId: string;
-    let answerIds: string[];
+    let pollId;
+    let answerIds;
 
     beforeEach(async () => {
       // Create a poll for testing
@@ -147,7 +148,7 @@ describe('Poll Routes Integration', () => {
         });
 
       pollId = response.body.poll.id;
-      answerIds = response.body.answers.map((a: { id: string }) => a.id);
+      answerIds = response.body.answers.map((a) => a.id);
     });
 
     it('should return poll details', async () => {
