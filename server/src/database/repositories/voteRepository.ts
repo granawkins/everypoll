@@ -33,6 +33,17 @@ export class VoteRepository {
 
       return this.getById(id);
     } catch (error: unknown) {
+      // Debug logging for CI testing issues
+      console.log('Error in VoteRepository.create:', userId, pollId, answerId);
+      console.log(
+        'Error type:',
+        error instanceof Error ? 'Error' : typeof error
+      );
+      console.log(
+        'Error message:',
+        error instanceof Error ? error.message : String(error)
+      );
+
       // Check if error is due to unique constraint violation on votes table
       // Handle different possible error message formats across environments
       if (
@@ -45,8 +56,14 @@ export class VoteRepository {
             error.message.toLowerCase().includes('constraint') &&
             error.message.toLowerCase().includes('votes')))
       ) {
+        console.log(
+          'Identified as constraint violation, throwing custom error'
+        );
         throw new Error('User has already voted on this poll');
       }
+
+      // Log that we're rethrowing the error
+      console.log('Rethrowing error (not identified as constraint violation)');
       throw error;
     }
   }
