@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 import { Poll, Answer } from '../models';
+import { PollAnswerCountError, PollNotFoundError } from '../../errors';
 
 /**
  * Repository for poll-related database operations
@@ -18,6 +19,7 @@ export class PollRepository {
    * @param question Poll question text
    * @param answerTexts Array of answer option texts
    * @returns The created poll with its answers
+   * @throws PollAnswerCountError if answer count is invalid
    */
   create(
     authorId: string,
@@ -25,8 +27,11 @@ export class PollRepository {
     answerTexts: string[]
   ): { poll: Poll; answers: Answer[] } {
     // Validate number of answers (2-10)
-    if (answerTexts.length < 2 || answerTexts.length > 10) {
-      throw new Error('Polls must have between 2 and 10 answer options');
+    if (answerTexts.length < 2) {
+      throw new PollAnswerCountError('At least 2 answer options are required');
+    }
+    if (answerTexts.length > 10) {
+      throw new PollAnswerCountError('Maximum 10 answer options allowed');
     }
 
     // Start a transaction
@@ -72,11 +77,28 @@ export class PollRepository {
   /**
    * Get a poll by ID
    * @param id Poll ID
-   * @returns Poll object or null if not found
+   * @returns Poll object
+   * @throws PollNotFoundError if poll not found
    */
   getById(id: string): Poll {
     const stmt = this.db.prepare('SELECT * FROM polls WHERE id = ?');
-    return stmt.get(id) as Poll;
+    const poll = stmt.get(id) as Poll;
+
+    if (!poll) {
+      throw new PollNotFoundError(`Poll with ID ${id} not found`);
+    }
+
+    return poll;
+  }
+
+  /**
+   * Try to get a poll by ID
+   * @param id Poll ID
+   * @returns Poll object or null if not found
+   */
+  tryGetById(id: string): Poll | null {
+    const stmt = this.db.prepare('SELECT * FROM polls WHERE id = ?');
+    return stmt.get(id) as Poll | null;
   }
 
   /**

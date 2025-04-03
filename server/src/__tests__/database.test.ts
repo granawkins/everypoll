@@ -1,9 +1,36 @@
 import { initializeTestDatabase, getRepositories } from '../database';
+import {
+  PollAnswerCountError,
+  PollNotFoundError,
+  AlreadyVotedError,
+} from '../errors';
 
 describe('Database Tests', () => {
   // Before each test, initialize a fresh test database
   beforeEach(() => {
     initializeTestDatabase();
+  });
+
+  describe('In-Memory Database', () => {
+    it('should preserve data between repository calls within the same test', () => {
+      // First repository instance
+      const { userRepository: repo1 } = getRepositories(true);
+      const user = repo1.create('test@example.com', 'Test User');
+
+      // Second repository instance - should have access to the same data
+      const { userRepository: repo2 } = getRepositories(true);
+      const retrievedUser = repo2.getByEmail('test@example.com');
+
+      expect(retrievedUser).not.toBeNull();
+      expect(retrievedUser?.id).toBe(user.id);
+    });
+
+    it('should reset data between tests', () => {
+      const { userRepository } = getRepositories(true);
+      // This should not find the user created in the previous test
+      const user = userRepository.getByEmail('test@example.com');
+      expect(user).toBeNull();
+    });
   });
 
   describe('User Repository', () => {
@@ -128,7 +155,19 @@ describe('Database Tests', () => {
       expect(retrievedAnswers.map((a) => a.text)).toEqual(answerTexts);
     });
 
-    it('should validate the number of answers', () => {
+    it('should throw PollNotFoundError for non-existent polls', () => {
+      const { pollRepository } = getRepositories(true);
+
+      // Try to get a non-existent poll
+      expect(() => pollRepository.getById('non-existent-id')).toThrow(
+        PollNotFoundError
+      );
+
+      // The tryGetById method should return null instead
+      expect(pollRepository.tryGetById('non-existent-id')).toBeNull();
+    });
+
+    it('should validate the number of answers and throw specific errors', () => {
       const { userRepository, pollRepository } = getRepositories(true);
 
       // Create a user first
@@ -137,7 +176,15 @@ describe('Database Tests', () => {
       // Try to create a poll with too few answers
       expect(() => {
         pollRepository.create(user.id, 'Question?', ['Single answer']);
-      }).toThrow('Polls must have between 2 and 10 answer options');
+      }).toThrow(PollAnswerCountError);
+
+      // Verify the error is about minimum answers
+      try {
+        pollRepository.create(user.id, 'Question?', ['Single answer']);
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollAnswerCountError);
+        expect((error as Error).message).toContain('At least 2');
+      }
 
       // Try to create a poll with too many answers
       expect(() => {
@@ -154,7 +201,27 @@ describe('Database Tests', () => {
           '10',
           '11',
         ]);
-      }).toThrow('Polls must have between 2 and 10 answer options');
+      }).toThrow(PollAnswerCountError);
+
+      // Verify the error is about maximum answers
+      try {
+        pollRepository.create(user.id, 'Question?', [
+          '1',
+          '2',
+          '3',
+          '4',
+          '5',
+          '6',
+          '7',
+          '8',
+          '9',
+          '10',
+          '11',
+        ]);
+      } catch (error) {
+        expect(error).toBeInstanceOf(PollAnswerCountError);
+        expect((error as Error).message).toContain('Maximum 10');
+      }
     });
 
     it('should get polls by author and paginate results', () => {
@@ -221,7 +288,7 @@ describe('Database Tests', () => {
       expect(totalVotes).toBe(3);
     });
 
-    it('should prevent double voting', () => {
+    it('should throw AlreadyVotedError when voting twice', () => {
       const { userRepository, pollRepository, voteRepository } =
         getRepositories(true);
 
@@ -237,10 +304,10 @@ describe('Database Tests', () => {
       // First vote should succeed
       voteRepository.create(user.id, poll.id, answers[0].id);
 
-      // Second vote should fail
+      // Second vote should throw AlreadyVotedError
       expect(() => {
         voteRepository.create(user.id, poll.id, answers[1].id);
-      }).toThrow('User has already voted on this poll');
+      }).toThrow(AlreadyVotedError);
 
       // Check if user has voted
       expect(voteRepository.hasVoted(user.id, poll.id)).toBe(true);

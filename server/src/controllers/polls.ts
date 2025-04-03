@@ -1,5 +1,13 @@
 import { Request, Response } from 'express';
 import { getRepositories } from '../database';
+import {
+  ValidationError,
+  PollAnswerCountError,
+  PollNotFoundError,
+  InvalidAnswerError,
+  AlreadyVotedError,
+  AuthenticationError,
+} from '../errors';
 
 /**
  * Create a new poll
@@ -10,28 +18,21 @@ export function createPoll(req: Request, res: Response) {
     const { question, answers } = req.body;
     const userId = req.user?.id;
 
-    // Validate required fields
+    // Validate user authentication
     if (!userId) {
-      res.status(500).json({ error: 'User ID not available' });
-      return;
+      throw new AuthenticationError('User ID not available');
     }
 
+    // Validate required fields
     if (!question) {
-      res.status(400).json({ error: 'Poll question is required' });
-      return;
+      throw new ValidationError('Poll question is required');
     }
 
-    if (!answers || !Array.isArray(answers) || answers.length < 2) {
-      res.status(400).json({ error: 'At least 2 answer options are required' });
-      return;
+    if (!answers || !Array.isArray(answers)) {
+      throw new ValidationError('Answer options must be an array');
     }
 
-    if (answers.length > 10) {
-      res.status(400).json({ error: 'Maximum 10 answer options allowed' });
-      return;
-    }
-
-    // Create poll
+    // Create poll (PollAnswerCountError may be thrown from repository)
     const { pollRepository, userRepository } = getRepositories();
     const { poll, answers: createdAnswers } = pollRepository.create(
       userId,
@@ -53,7 +54,17 @@ export function createPoll(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('Error creating poll:', error);
-    res.status(500).json({ error: 'Failed to create poll' });
+
+    // Map error types to appropriate HTTP status codes
+    if (error instanceof AuthenticationError) {
+      res.status(500).json({ error: error.message });
+    } else if (error instanceof ValidationError) {
+      res.status(400).json({ error: error.message });
+    } else if (error instanceof PollAnswerCountError) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Failed to create poll' });
+    }
   }
 }
 
@@ -66,20 +77,14 @@ export function getPollById(req: Request, res: Response) {
     const { id } = req.params;
 
     if (!id) {
-      res.status(400).json({ error: 'Poll ID is required' });
-      return;
+      throw new ValidationError('Poll ID is required');
     }
 
     const { pollRepository, userRepository, voteRepository } =
       getRepositories();
 
-    // Get poll
+    // Get poll - will throw PollNotFoundError if not found
     const poll = pollRepository.getById(id);
-
-    if (!poll) {
-      res.status(404).json({ error: 'Poll not found' });
-      return;
-    }
 
     // Get answers
     const answers = pollRepository.getAnswers(id);
@@ -87,7 +92,7 @@ export function getPollById(req: Request, res: Response) {
     // Get author
     const author = userRepository.getById(poll.author_id);
 
-    // Get vote counts if available
+    // Get vote counts
     const voteCounts = voteRepository.countVotesByAnswer(id);
     const totalVotes = voteRepository.countTotalVotes(id);
 
@@ -119,7 +124,15 @@ export function getPollById(req: Request, res: Response) {
     });
   } catch (error) {
     console.error('Error getting poll:', error);
-    res.status(500).json({ error: 'Failed to retrieve poll' });
+
+    // Map error types to appropriate HTTP status codes
+    if (error instanceof ValidationError) {
+      res.status(400).json({ error: error.message });
+    } else if (error instanceof PollNotFoundError) {
+      res.status(404).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Failed to retrieve poll' });
+    }
   }
 }
 
@@ -135,63 +148,60 @@ export function voteOnPoll(req: Request, res: Response) {
 
     // Validate required fields
     if (!userId) {
-      res.status(500).json({ error: 'User ID not available' });
-      return;
+      throw new AuthenticationError('User ID not available');
     }
 
     if (!pollId) {
-      res.status(400).json({ error: 'Poll ID is required' });
-      return;
+      throw new ValidationError('Poll ID is required');
     }
 
     if (!answerId) {
-      res.status(400).json({ error: 'Answer ID is required' });
-      return;
+      throw new ValidationError('Answer ID is required');
     }
 
     const { pollRepository, voteRepository } = getRepositories();
 
-    // Check if poll exists
+    // Check if poll exists - will throw PollNotFoundError if not found
     const poll = pollRepository.getById(pollId);
-    if (!poll) {
-      res.status(404).json({ error: 'Poll not found' });
-      return;
-    }
 
     // Check if answer belongs to the poll
     const answers = pollRepository.getAnswers(pollId);
     const answerExists = answers.some((answer) => answer.id === answerId);
     if (!answerExists) {
-      res.status(400).json({ error: 'Invalid answer for this poll' });
-      return;
+      throw new InvalidAnswerError('Invalid answer for this poll');
     }
 
-    try {
-      // Record the vote
-      const vote = voteRepository.create(userId, pollId, answerId);
+    // Record the vote - may throw AlreadyVotedError
+    const vote = voteRepository.create(userId, pollId, answerId);
 
-      // Get updated vote counts
-      const voteCounts = voteRepository.countVotesByAnswer(pollId);
-      const totalVotes = voteRepository.countTotalVotes(pollId);
+    // Get updated vote counts
+    const voteCounts = voteRepository.countVotesByAnswer(pollId);
+    const totalVotes = voteRepository.countTotalVotes(pollId);
 
-      // Return successful response
-      res.status(201).json({
-        vote,
-        votes: {
-          total: totalVotes,
-          byAnswer: voteCounts,
-        },
-      });
-    } catch (error) {
-      // Handle case where user has already voted
-      if (error instanceof Error && error.message.includes('already voted')) {
-        res.status(400).json({ error: 'User has already voted on this poll' });
-        return;
-      }
-      throw error; // Re-throw for the outer catch block
-    }
+    // Return successful response
+    res.status(201).json({
+      vote,
+      votes: {
+        total: totalVotes,
+        byAnswer: voteCounts,
+      },
+    });
   } catch (error) {
     console.error('Error voting on poll:', error);
-    res.status(500).json({ error: 'Failed to record vote' });
+
+    // Map error types to appropriate HTTP status codes
+    if (error instanceof AuthenticationError) {
+      res.status(500).json({ error: error.message });
+    } else if (error instanceof ValidationError) {
+      res.status(400).json({ error: error.message });
+    } else if (error instanceof PollNotFoundError) {
+      res.status(404).json({ error: error.message });
+    } else if (error instanceof InvalidAnswerError) {
+      res.status(400).json({ error: error.message });
+    } else if (error instanceof AlreadyVotedError) {
+      res.status(400).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: 'Failed to record vote' });
+    }
   }
 }
