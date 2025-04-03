@@ -14,10 +14,14 @@ const IN_MEMORY_DB_URI = ':memory:';
 let inMemoryTestDb: Database.Database | null = null;
 
 /**
- * Initialize a file-based database - creates the database file if it doesn't exist
- * and ensures the directory structure is in place
+ * Initialize a database
+ * For file databases: creates the file if it doesn't exist and closes connection
+ * For in-memory databases: creates the database and returns the connection
+ * @returns Database connection for in-memory databases, undefined for file databases
  */
-export function initializeDatabase(dbPath: string = DB_PATH): void {
+export function initializeDatabase(
+  dbPath: string = DB_PATH
+): Database.Database | undefined {
   // Skip directory creation for in-memory database
   if (dbPath !== IN_MEMORY_DB_URI) {
     // Create the data directory if it doesn't exist
@@ -36,10 +40,11 @@ export function initializeDatabase(dbPath: string = DB_PATH): void {
   runMigrations(db);
 
   // For file-based databases, close the connection after initialization
-  // For in-memory databases, keep the connection open
+  // For in-memory databases, keep the connection open and return it
   if (dbPath !== IN_MEMORY_DB_URI) {
     db.close();
     console.log(`Database initialized at ${dbPath}`);
+    return undefined;
   } else {
     console.log('In-memory database initialized');
     return db;
