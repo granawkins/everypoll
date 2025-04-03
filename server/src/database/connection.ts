@@ -7,7 +7,8 @@ import { runMigrations } from './migrations';
 // Database configuration
 const DB_DIRECTORY = path.join(__dirname, '../../../data');
 const DB_PATH = path.join(DB_DIRECTORY, 'everypoll.db');
-const TEST_DB_PATH = ':memory:'; // In-memory database for tests
+// Use a constant for the in-memory database URI for consistency
+const IN_MEMORY_DB_URI = ':memory:';
 
 // Track existing in-memory test database connections to allow sharing across tests
 let inMemoryTestDb: Database.Database | null = null;
@@ -18,7 +19,7 @@ let inMemoryTestDb: Database.Database | null = null;
  */
 export function initializeDatabase(dbPath: string = DB_PATH): void {
   // Skip directory creation for in-memory database
-  if (dbPath !== ':memory:') {
+  if (dbPath !== IN_MEMORY_DB_URI) {
     // Create the data directory if it doesn't exist
     if (!fs.existsSync(DB_DIRECTORY)) {
       fs.mkdirSync(DB_DIRECTORY, { recursive: true });
@@ -36,7 +37,7 @@ export function initializeDatabase(dbPath: string = DB_PATH): void {
 
   // For file-based databases, close the connection after initialization
   // For in-memory databases, keep the connection open
-  if (dbPath !== ':memory:') {
+  if (dbPath !== IN_MEMORY_DB_URI) {
     db.close();
     console.log(`Database initialized at ${dbPath}`);
   } else {
@@ -76,7 +77,7 @@ export function getConnection(test: boolean = false): Database.Database {
 function initializeInMemoryTestDatabase(): Database.Database {
   // Create a new in-memory database and initialize it
   console.log('Creating new in-memory test database');
-  const db = new Database(':memory:');
+  const db = new Database(IN_MEMORY_DB_URI);
 
   // Set up schema and run migrations
   createTables(db);

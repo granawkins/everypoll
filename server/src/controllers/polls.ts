@@ -161,8 +161,8 @@ export function voteOnPoll(req: Request, res: Response) {
 
     const { pollRepository, voteRepository } = getRepositories();
 
-    // Check if poll exists - will throw PollNotFoundError if not found
-    const poll = pollRepository.getById(pollId);
+    // This will throw PollNotFoundError if poll doesn't exist
+    pollRepository.getById(pollId);
 
     // Check if answer belongs to the poll
     const answers = pollRepository.getAnswers(pollId);

@@ -6,8 +6,6 @@ import {
   PollNotFoundError,
   AlreadyVotedError,
   PollAnswerCountError,
-  ValidationError,
-  InvalidAnswerError,
 } from '../../errors';
 
 // Mock the JWT service
