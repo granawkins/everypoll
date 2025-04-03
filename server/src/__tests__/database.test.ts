@@ -224,49 +224,46 @@ describe('Database Tests', () => {
     // This test shows inconsistent behavior between local and CI environments
     // The core functionality works correctly, but there's an environment difference
     // in how error messages from SQLite are processed or compared
-    it('should prevent double voting', function () {
-      // Skip this specific test in CI environments
-      if (process.env.CI) {
-        console.log(
-          'Skipping "should prevent double voting" test in CI environment'
-        );
+    (process.env.CI ? it.skip : it)(
+      'should prevent double voting',
+      function () {
+        // Using Jest's native conditional test skipping instead of manual skipping
         // TODO: Fix inconsistency between local and CI environments for SQLite constraint errors
-        return;
+
+        const { userRepository, pollRepository, voteRepository } =
+          getRepositories(true);
+
+        // Create a user
+        const user = userRepository.create('test@example.com', 'Test User');
+
+        // Create a poll
+        const { poll, answers } = pollRepository.create(user.id, 'Question?', [
+          'Option 1',
+          'Option 2',
+        ]);
+
+        // First vote should succeed
+        voteRepository.create(user.id, poll.id, answers[0].id);
+
+        // Second vote should fail - use direct try/catch instead of Jest's toThrow matcher
+        let errorThrown = false;
+        let errorMessage = '';
+        try {
+          voteRepository.create(user.id, poll.id, answers[1].id);
+        } catch (error) {
+          errorThrown = true;
+          errorMessage = error instanceof Error ? error.message : String(error);
+          // Log the exact error for debugging
+          console.log('Double voting test caught error:', errorMessage);
+        }
+        // Verify both that an error was thrown and it has the right message
+        expect(errorThrown).toBe(true);
+        expect(errorMessage).toMatch(/User has already voted on this poll/);
+
+        // Check if user has voted
+        expect(voteRepository.hasVoted(user.id, poll.id)).toBe(true);
       }
-
-      const { userRepository, pollRepository, voteRepository } =
-        getRepositories(true);
-
-      // Create a user
-      const user = userRepository.create('test@example.com', 'Test User');
-
-      // Create a poll
-      const { poll, answers } = pollRepository.create(user.id, 'Question?', [
-        'Option 1',
-        'Option 2',
-      ]);
-
-      // First vote should succeed
-      voteRepository.create(user.id, poll.id, answers[0].id);
-
-      // Second vote should fail - use direct try/catch instead of Jest's toThrow matcher
-      let errorThrown = false;
-      let errorMessage = '';
-      try {
-        voteRepository.create(user.id, poll.id, answers[1].id);
-      } catch (error) {
-        errorThrown = true;
-        errorMessage = error instanceof Error ? error.message : String(error);
-        // Log the exact error for debugging
-        console.log('Double voting test caught error:', errorMessage);
-      }
-      // Verify both that an error was thrown and it has the right message
-      expect(errorThrown).toBe(true);
-      expect(errorMessage).toMatch(/User has already voted on this poll/);
-
-      // Check if user has voted
-      expect(voteRepository.hasVoted(user.id, poll.id)).toBe(true);
-    });
+    );
 
     it('should support cross-referencing polls', () => {
       const { userRepository, pollRepository, voteRepository } =
