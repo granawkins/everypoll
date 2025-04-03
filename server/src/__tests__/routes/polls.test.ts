@@ -37,10 +37,22 @@ jest.mock('../../database', () => {
     created_at: new Date().toISOString(),
   };
 
+  const mockReferencePoll = {
+    id: 'reference-poll-id',
+    author_id: 'test-user-id',
+    question: 'Reference question?',
+    created_at: new Date().toISOString(),
+  };
+
   // Basic answers for most tests
   const mockAnswers = [
     { id: 'answer1', poll_id: 'test-poll-id', text: 'Answer 1' },
     { id: 'answer2', poll_id: 'test-poll-id', text: 'Answer 2' },
+  ];
+
+  const mockReferenceAnswers = [
+    { id: 'ref-answer1', poll_id: 'reference-poll-id', text: 'Ref Answer 1' },
+    { id: 'ref-answer2', poll_id: 'reference-poll-id', text: 'Ref Answer 2' },
   ];
 
   const mockVote = {
@@ -68,10 +80,14 @@ jest.mock('../../database', () => {
         }),
         getById: jest.fn().mockImplementation((id) => {
           if (id === 'test-poll-id') return mockPoll;
+          if (id === 'reference-poll-id') return mockReferencePoll;
           if (id === 'non-existent-poll') return null;
           return mockPoll;
         }),
-        getAnswers: jest.fn().mockImplementation(() => {
+        getAnswers: jest.fn().mockImplementation((id) => {
+          // Return specific answers based on poll ID
+          if (id === 'reference-poll-id') return mockReferenceAnswers;
+
           // Return standard answers for most tests, but for the "already voted"
           // test include the extra answer to make validation pass
           if (
@@ -116,6 +132,19 @@ jest.mock('../../database', () => {
           return userId === 'test-user-id' && pollId === 'test-poll-id';
         }),
         getUserVote: jest.fn().mockReturnValue(mockVote),
+        getCrossReferencedVotes: jest
+          .fn()
+          .mockImplementation(
+            (targetPollId, referencePollId, referenceAnswerId) => {
+              if (referenceAnswerId === 'ref-answer1') {
+                return { answer1: 2, answer2: 1 };
+              } else if (referenceAnswerId === 'ref-answer2') {
+                return { answer1: 1, answer2: 1 };
+              } else {
+                return { answer1: 3, answer2: 2 };
+              }
+            }
+          ),
       },
     }),
   };
@@ -258,6 +287,7 @@ describe('Poll Routes', () => {
       expect(response.body).toHaveProperty('votes');
       expect(response.body).toHaveProperty('hasVoted');
       expect(response.body).toHaveProperty('userVote');
+      expect(response.body).toHaveProperty('crossReferences');
 
       expect(response.body.poll.id).toBe('test-poll-id');
       expect(response.body.answers).toHaveLength(2);
@@ -265,6 +295,82 @@ describe('Poll Routes', () => {
       expect(response.body.votes.total).toBe(5);
       expect(response.body.hasVoted).toBe(true);
       expect(response.body.userVote).toBe('answer1');
+    });
+
+    it('should include cross-referenced data when query parameters are provided', async () => {
+      // Mock jwt verification for this test
+      (jwtService.verifyToken as jest.Mock).mockReturnValueOnce({
+        userId: 'test-user-id',
+      });
+
+      const response = await request(app)
+        .get('/api/polls/test-poll-id?p1=reference-poll-id&a1=ref-answer1')
+        .set('Cookie', ['auth_token=test-jwt-token']);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('crossReferences');
+      expect(response.body.crossReferences).toHaveLength(1);
+
+      const crossRef = response.body.crossReferences[0];
+      expect(crossRef.poll.id).toBe('reference-poll-id');
+      expect(crossRef.answers).toHaveLength(2);
+      expect(crossRef.selectedAnswer.id).toBe('ref-answer1');
+      expect(crossRef.votes.byAnswer).toEqual({ answer1: 2, answer2: 1 });
+
+      // Verify the getCrossReferencedVotes was called with correct parameters
+      const { voteRepository } = getRepositories();
+      expect(voteRepository.getCrossReferencedVotes).toHaveBeenCalledWith(
+        'test-poll-id',
+        'reference-poll-id',
+        'ref-answer1'
+      );
+    });
+
+    it('should support multiple cross-references', async () => {
+      // Mock jwt verification for this test
+      (jwtService.verifyToken as jest.Mock).mockReturnValueOnce({
+        userId: 'test-user-id',
+      });
+
+      const response = await request(app)
+        .get(
+          '/api/polls/test-poll-id?p1=reference-poll-id&a1=ref-answer1&p2=reference-poll-id&a2=ref-answer2'
+        )
+        .set('Cookie', ['auth_token=test-jwt-token']);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('crossReferences');
+
+      // Should only have one cross-reference since we've used the same poll ID twice
+      // (the implementation deduplicates cross-references by poll ID)
+      expect(response.body.crossReferences).toHaveLength(1);
+    });
+
+    it('should handle cross-references without answer IDs', async () => {
+      // Mock jwt verification for this test
+      (jwtService.verifyToken as jest.Mock).mockReturnValueOnce({
+        userId: 'test-user-id',
+      });
+
+      const response = await request(app)
+        .get('/api/polls/test-poll-id?p1=reference-poll-id')
+        .set('Cookie', ['auth_token=test-jwt-token']);
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('crossReferences');
+      expect(response.body.crossReferences).toHaveLength(1);
+
+      const crossRef = response.body.crossReferences[0];
+      expect(crossRef.selectedAnswer).toBeNull();
+      expect(crossRef.votes.byAnswer).toEqual({ answer1: 3, answer2: 2 });
+
+      // Verify the getCrossReferencedVotes was called with correct parameters (no answer ID)
+      const { voteRepository } = getRepositories();
+      expect(voteRepository.getCrossReferencedVotes).toHaveBeenCalledWith(
+        'test-poll-id',
+        'reference-poll-id',
+        undefined
+      );
     });
 
     it('should work without authentication', async () => {
@@ -281,6 +387,16 @@ describe('Poll Routes', () => {
 
       expect(response.status).toBe(404);
       expect(response.body.error).toBe('Poll not found');
+    });
+
+    it('should gracefully handle invalid cross-reference parameters', async () => {
+      const response = await request(app).get(
+        '/api/polls/test-poll-id?p1=non-existent-poll&a1=invalid-answer'
+      );
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('crossReferences');
+      expect(response.body.crossReferences).toHaveLength(0);
     });
   });
 

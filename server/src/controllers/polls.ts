@@ -60,10 +60,12 @@ export function createPoll(req: Request, res: Response) {
 /**
  * Get a poll by ID
  * Includes answers, author info, and vote counts if available
+ * Optionally includes cross-referenced data from other polls
  */
 export function getPollById(req: Request, res: Response) {
   try {
     const { id } = req.params;
+    const query = req.query;
 
     if (!id) {
       res.status(400).json({ error: 'Poll ID is required' });
@@ -102,6 +104,15 @@ export function getPollById(req: Request, res: Response) {
       userVote = voteRepository.getUserVote(req.user.id, id);
     }
 
+    // Process cross-references if present in query parameters
+    const crossReferences = processCrossReferences(
+      query,
+      id,
+      pollRepository,
+      voteRepository,
+      userRepository
+    );
+
     // Return poll data
     res.json({
       poll,
@@ -116,11 +127,101 @@ export function getPollById(req: Request, res: Response) {
       },
       userVote: userVote ? userVote.answer_id : null,
       hasVoted,
+      crossReferences,
     });
   } catch (error) {
     console.error('Error getting poll:', error);
     res.status(500).json({ error: 'Failed to retrieve poll' });
   }
+}
+
+/**
+ * Process cross-reference parameters from query string
+ * @param query Request query parameters
+ * @param targetPollId ID of the poll being viewed
+ * @param pollRepository Repository for poll operations
+ * @param voteRepository Repository for vote operations
+ * @param userRepository Repository for user operations
+ * @returns Array of cross-reference data objects
+ */
+export function processCrossReferences(
+  query: any,
+  targetPollId: string,
+  pollRepository: any,
+  voteRepository: any,
+  userRepository: any
+) {
+  const crossReferences = [];
+  const processedPollIds = new Set(); // To avoid duplicate cross-references
+
+  // Find all cross-reference poll parameters (p1, p2, p3, etc.)
+  for (let i = 1; ; i++) {
+    const pollParam = `p${i}`;
+    const answerParam = `a${i}`;
+
+    const referencePollId = query[pollParam] as string;
+    if (!referencePollId) break; // No more cross-references
+
+    // Skip if we've already processed this poll
+    if (processedPollIds.has(referencePollId)) continue;
+    processedPollIds.add(referencePollId);
+
+    // Skip if the cross-reference poll is the same as the target poll
+    if (referencePollId === targetPollId) continue;
+
+    try {
+      // Verify reference poll exists
+      const referencePoll = pollRepository.getById(referencePollId);
+      if (!referencePoll) continue; // Skip invalid poll IDs
+
+      // Get reference poll answers
+      const referenceAnswers = pollRepository.getAnswers(referencePollId);
+
+      // Check if answer ID is specified and valid
+      const referenceAnswerId = query[answerParam] as string;
+      let selectedAnswer = null;
+
+      if (referenceAnswerId) {
+        selectedAnswer = referenceAnswers.find(
+          (a) => a.id === referenceAnswerId
+        );
+        // Skip if answer ID is specified but invalid
+        if (!selectedAnswer) continue;
+      }
+
+      // Get cross-referenced vote data
+      const crossReferencedVotes = voteRepository.getCrossReferencedVotes(
+        targetPollId,
+        referencePollId,
+        referenceAnswerId
+      );
+
+      // Get the reference poll author
+      const referenceAuthor = userRepository.getById(referencePoll.author_id);
+
+      // Add to cross-references array
+      crossReferences.push({
+        poll: referencePoll,
+        answers: referenceAnswers,
+        selectedAnswer,
+        author: {
+          id: referenceAuthor.id,
+          name: referenceAuthor.name,
+        },
+        votes: {
+          byAnswer: crossReferencedVotes,
+        },
+      });
+    } catch (error) {
+      console.error(
+        `Error processing cross-reference ${referencePollId}:`,
+        error
+      );
+      // Continue to next cross-reference if there's an error
+    }
+  }
+
+  return crossReferences;
 }
 
 /**
