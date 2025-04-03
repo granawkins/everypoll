@@ -1,63 +1,93 @@
-import express, { Request, Response } from 'express';
+import express, { Request, Response, Application } from 'express';
 import cors from 'cors';
 import path from 'path';
 import cookieParser from 'cookie-parser';
 import { getConnection } from './database';
 import authRoutes from './routes/auth';
 import pollsRoutes from './routes/polls';
+import Database from 'better-sqlite3';
 
-export const app = express();
 export const PORT = process.env.PORT || 5000;
 export const CLIENT_DIST_PATH = path.join(__dirname, '../../client/dist');
 
-// Initialize database connection
-const db = getConnection();
+// Database connection that can be used by the server
+let dbConnection: Database.Database | null = null;
 
-// Gracefully close database on process exit
-process.on('exit', () => {
-  console.log('Closing database connection');
-  db.close();
-});
+/**
+ * Initialize the app with a database connection
+ * @param db Optional existing database connection
+ * @returns Express application
+ */
+export function createApp(db?: Database.Database): Application {
+  const app = express();
 
-// Also handle SIGINT and SIGTERM
-process.on('SIGINT', () => {
-  console.log('Received SIGINT, closing database');
-  db.close();
-  process.exit(0);
-});
+  // Initialize database connection if not provided
+  if (!db) {
+    // Use environment variable to determine if we're in a test environment
+    const isTest = process.env.NODE_ENV === 'test';
+    db = getConnection(isTest);
+  }
 
-process.on('SIGTERM', () => {
-  console.log('Received SIGTERM, closing database');
-  db.close();
-  process.exit(0);
-});
+  // Store the database connection for server use
+  dbConnection = db;
 
-// Middleware
-app.use(
-  cors({
-    origin:
-      process.env.NODE_ENV === 'production'
-        ? 'https://everypoll.com'
-        : 'http://localhost:5173',
-    credentials: true, // Allow cookies
-  })
-);
-app.use(express.json()); // Parse JSON bodies
-app.use(cookieParser()); // Parse cookies
-app.use(express.static(CLIENT_DIST_PATH)); // Serve static files from client/dist
+  // Gracefully close database on process exit
+  process.on('exit', () => {
+    if (dbConnection) {
+      console.log('Closing database connection');
+      dbConnection.close();
+    }
+  });
 
-// API routes
-app.get('/api', (req: Request, res: Response) => {
-  res.json({ message: 'Welcome to the EveryPoll API!' });
-});
+  // Also handle SIGINT and SIGTERM
+  process.on('SIGINT', () => {
+    if (dbConnection) {
+      console.log('Received SIGINT, closing database');
+      dbConnection.close();
+    }
+    process.exit(0);
+  });
 
-// Auth routes
-app.use('/api/auth', authRoutes);
+  process.on('SIGTERM', () => {
+    if (dbConnection) {
+      console.log('Received SIGTERM, closing database');
+      dbConnection.close();
+    }
+    process.exit(0);
+  });
 
-// Poll routes
-app.use('/api/polls', pollsRoutes);
+  // Middleware
+  app.use(
+    cors({
+      origin:
+        process.env.NODE_ENV === 'production'
+          ? 'https://everypoll.com'
+          : 'http://localhost:5173',
+      credentials: true, // Allow cookies
+    })
+  );
+  app.use(express.json()); // Parse JSON bodies
+  app.use(cookieParser()); // Parse cookies
+  app.use(express.static(CLIENT_DIST_PATH)); // Serve static files from client/dist
 
-// Serve React app (must be last route)
-app.get('*', (req: Request, res: Response) => {
-  res.sendFile(path.join(CLIENT_DIST_PATH, 'index.html'));
-});
+  // API routes
+  app.get('/api', (req: Request, res: Response) => {
+    res.json({ message: 'Welcome to the EveryPoll API!' });
+  });
+
+  // Auth routes
+  app.use('/api/auth', authRoutes);
+
+  // Poll routes
+  app.use('/api/polls', pollsRoutes);
+
+  // Serve React app (must be last route)
+  app.get('*', (req: Request, res: Response) => {
+    res.sendFile(path.join(CLIENT_DIST_PATH, 'index.html'));
+  });
+
+  return app;
+}
+
+// Create a default app instance for backward compatibility
+export const app = createApp();

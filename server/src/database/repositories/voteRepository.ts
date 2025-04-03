@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
 import { v4 as uuidv4 } from 'uuid';
 import { Vote } from '../models';
+import { AlreadyVotedError } from '../../errors';
 
 /**
  * Repository for vote-related database operations
@@ -18,7 +19,7 @@ export class VoteRepository {
    * @param pollId Poll ID
    * @param answerId Answer ID
    * @returns The created vote
-   * @throws Error if the user has already voted on this poll
+   * @throws AlreadyVotedError if the user has already voted on this poll
    */
   create(userId: string, pollId: string, answerId: string): Vote {
     const id = uuidv4();
@@ -38,7 +39,7 @@ export class VoteRepository {
         error instanceof Error &&
         error.message.includes('UNIQUE constraint failed')
       ) {
-        throw new Error('User has already voted on this poll');
+        throw new AlreadyVotedError('User has already voted on this poll');
       }
       throw error;
     }
