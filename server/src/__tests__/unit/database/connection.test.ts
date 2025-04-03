@@ -68,17 +68,17 @@ describe('Database Connection', () => {
       getConnection(DbConnectionType.TestProcess),
     ];
 
-    // Verify all connections are open
+    // Verify all connections can execute a query (are open)
     connections.forEach((db) => {
-      expect(db.closed).toBe(false);
+      expect(() => db.pragma('schema_version')).not.toThrow();
     });
 
     // Close all connections
     closeAllConnections();
 
-    // Verify all connections are closed
+    // Verify all connections throw when queried (are closed)
     connections.forEach((db) => {
-      expect(db.closed).toBe(true);
+      expect(() => db.pragma('schema_version')).toThrow();
     });
   });
 });

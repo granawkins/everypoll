@@ -125,10 +125,14 @@ export function convertSQLiteError(
     // Special case for votes unique constraint
     if (
       errorMessage.includes('votes.poll_id, votes.user_id') &&
-      context?.userId &&
-      context?.pollId
+      context &&
+      typeof context.userId === 'string' &&
+      typeof context.pollId === 'string'
     ) {
-      return new AlreadyVotedError(context.userId, context.pollId);
+      return new AlreadyVotedError(
+        context.userId as string,
+        context.pollId as string
+      );
     }
     return new UniqueConstraintError(errorMessage);
   }

@@ -8,8 +8,20 @@ import { runMigrations } from './migrations';
 const DB_DIRECTORY = path.join(__dirname, '../../../data');
 const DB_PATH = path.join(DB_DIRECTORY, 'everypoll.db');
 
-// Track open connections to ensure proper cleanup
+// Track open connections and their status to ensure proper cleanup
 const openConnections: Database.Database[] = [];
+const closedConnections = new Set<Database.Database>();
+
+// Utility to check if a connection is closed
+function isConnectionClosed(db: Database.Database): boolean {
+  try {
+    // Try to execute a simple pragma query - will throw if connection is closed
+    db.pragma('schema_version');
+    return false;
+  } catch (error) {
+    return true;
+  }
+}
 
 // Connection options
 export enum DbConnectionType {
@@ -140,8 +152,9 @@ export function initializeTestDatabase(
 export function closeAllConnections(): void {
   openConnections.forEach((db) => {
     try {
-      if (db && !db.closed) {
+      if (db && !isConnectionClosed(db)) {
         db.close();
+        closedConnections.add(db);
       }
     } catch (error) {
       console.error('Error closing database connection:', error);
@@ -157,8 +170,9 @@ export function closeAllConnections(): void {
  */
 export function closeConnection(db: Database.Database): void {
   try {
-    if (db && !db.closed) {
+    if (db && !isConnectionClosed(db)) {
       db.close();
+      closedConnections.add(db);
     }
   } catch (error) {
     console.error('Error closing database connection:', error);
