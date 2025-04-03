@@ -1,3 +1,4 @@
+/* global describe, it, afterEach, expect */
 import {
   initializeTestDatabase,
   getConnection,
