@@ -1,5 +1,10 @@
 import { Request, Response } from 'express';
-import { getRepositories } from '../database';
+import {
+  getRepositories,
+  PollRepository,
+  VoteRepository,
+  UserRepository,
+} from '../database';
 
 /**
  * Create a new poll
@@ -145,11 +150,11 @@ export function getPollById(req: Request, res: Response) {
  * @returns Array of cross-reference data objects
  */
 export function processCrossReferences(
-  query: any,
+  query: Record<string, string | string[]>,
   targetPollId: string,
-  pollRepository: any,
-  voteRepository: any,
-  userRepository: any
+  pollRepository: PollRepository,
+  voteRepository: VoteRepository,
+  userRepository: UserRepository
 ) {
   const crossReferences = [];
   const processedPollIds = new Set(); // To avoid duplicate cross-references

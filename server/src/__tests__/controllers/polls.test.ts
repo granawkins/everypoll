@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { getPollById, processCrossReferences } from '../../controllers/polls';
+import { getPollById } from '../../controllers/polls';
 import { getRepositories } from '../../database';
 
 // Mock the database repositories
