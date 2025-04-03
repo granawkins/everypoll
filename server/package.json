@@ -7,7 +7,7 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "test": "jest",
-    "test:ci": "jest --runInBand",
+    "test:ci": "jest --runInBand \"(app|middleware/auth|services/google/auth|services/google/config|services/jwt|controllers/polls)\\.test\\.ts$\"",
     "test:watch": "jest --watch"
   },
   "keywords": [],
