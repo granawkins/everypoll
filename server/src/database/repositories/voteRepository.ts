@@ -33,10 +33,17 @@ export class VoteRepository {
 
       return this.getById(id);
     } catch (error: unknown) {
-      // Check if error is due to unique constraint violation
+      // Check if error is due to unique constraint violation on votes table
+      // Handle different possible error message formats across environments
       if (
         error instanceof Error &&
-        error.message.includes('UNIQUE constraint failed')
+        (error.message.includes('UNIQUE constraint failed') ||
+          error.message.includes('votes.poll_id, votes.user_id') ||
+          error.message.includes('SQLITE_CONSTRAINT') ||
+          // Check if it's a uniqueness constraint error related to votes table
+          (error.message.toLowerCase().includes('unique') &&
+            error.message.toLowerCase().includes('constraint') &&
+            error.message.toLowerCase().includes('votes')))
       ) {
         throw new Error('User has already voted on this poll');
       }
