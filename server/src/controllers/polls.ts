@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { ParsedQs } from 'qs';
 import {
   getRepositories,
   PollRepository,
@@ -150,7 +151,7 @@ export function getPollById(req: Request, res: Response) {
  * @returns Array of cross-reference data objects
  */
 export function processCrossReferences(
-  query: Record<string, string | string[]>,
+  query: ParsedQs,
   targetPollId: string,
   pollRepository: PollRepository,
   voteRepository: VoteRepository,
@@ -164,7 +165,15 @@ export function processCrossReferences(
     const pollParam = `p${i}`;
     const answerParam = `a${i}`;
 
-    const referencePollId = query[pollParam] as string;
+    const pollIdValue = query[pollParam];
+    // Handle string, array, undefined, or object types coming from query params
+    const referencePollId =
+      typeof pollIdValue === 'string'
+        ? pollIdValue
+        : Array.isArray(pollIdValue) && pollIdValue.length > 0
+          ? String(pollIdValue[0])
+          : '';
+
     if (!referencePollId) break; // No more cross-references
 
     // Skip if we've already processed this poll
@@ -183,7 +192,15 @@ export function processCrossReferences(
       const referenceAnswers = pollRepository.getAnswers(referencePollId);
 
       // Check if answer ID is specified and valid
-      const referenceAnswerId = query[answerParam] as string;
+      const answerIdValue = query[answerParam];
+      // Handle string, array, undefined, or object types coming from query params
+      const referenceAnswerId =
+        typeof answerIdValue === 'string'
+          ? answerIdValue
+          : Array.isArray(answerIdValue) && answerIdValue.length > 0
+            ? String(answerIdValue[0])
+            : '';
+
       let selectedAnswer = null;
 
       if (referenceAnswerId) {
