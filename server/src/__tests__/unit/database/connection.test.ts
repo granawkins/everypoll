@@ -8,9 +8,18 @@ import {
 import fs from 'fs';
 import path from 'path';
 
-// Define types for query results
-type QueryResult = { result: number };
-type TableRecord = { name: string };
+// Define interfaces for query results
+interface QueryResult {
+  result: number;
+}
+interface TableRecord {
+  name: string;
+}
+
+// Helper function for type casting in a way compatible with babel
+function assertType<T>(value: unknown): T {
+  return value as unknown as T;
+}
 
 describe('Database Connection', () => {
   const testDirectory = path.join(__dirname, '../../../../../data');
@@ -25,15 +34,16 @@ describe('Database Connection', () => {
 
     // Verify database is usable
     const stmt = db.prepare('SELECT 1 + 1 as result');
-    const result: QueryResult = stmt.get();
+    // Use helper to cast the unknown return type to our interface
+    const result = assertType<QueryResult>(stmt.get());
 
     expect(result.result).toBe(2);
     expect(db.memory).toBe(true);
 
     // Verify tables were created
-    const tables: TableRecord[] = db
-      .prepare("SELECT name FROM sqlite_master WHERE type='table'")
-      .all();
+    const tables = assertType<TableRecord[]>(
+      db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all()
+    );
 
     expect(tables.map((t) => t.name)).toContain('users');
     expect(tables.map((t) => t.name)).toContain('polls');
@@ -53,7 +63,7 @@ describe('Database Connection', () => {
 
     // Verify database is usable
     const stmt = db.prepare('SELECT 1 + 1 as result');
-    const result: QueryResult = stmt.get();
+    const result = assertType<QueryResult>(stmt.get());
 
     expect(result.result).toBe(2);
 
