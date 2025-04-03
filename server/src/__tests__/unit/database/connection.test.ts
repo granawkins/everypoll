@@ -8,6 +8,10 @@ import {
 import fs from 'fs';
 import path from 'path';
 
+// Define types for query results
+type QueryResult = { result: number };
+type TableRecord = { name: string };
+
 describe('Database Connection', () => {
   const testDirectory = path.join(__dirname, '../../../../../data');
 
@@ -21,15 +25,15 @@ describe('Database Connection', () => {
 
     // Verify database is usable
     const stmt = db.prepare('SELECT 1 + 1 as result');
-    const result = stmt.get() as { result: number };
+    const result: QueryResult = stmt.get();
 
     expect(result.result).toBe(2);
     expect(db.memory).toBe(true);
 
     // Verify tables were created
-    const tables = db
+    const tables: TableRecord[] = db
       .prepare("SELECT name FROM sqlite_master WHERE type='table'")
-      .all() as { name: string }[];
+      .all();
 
     expect(tables.map((t) => t.name)).toContain('users');
     expect(tables.map((t) => t.name)).toContain('polls');
@@ -49,7 +53,7 @@ describe('Database Connection', () => {
 
     // Verify database is usable
     const stmt = db.prepare('SELECT 1 + 1 as result');
-    const result = stmt.get() as { result: number };
+    const result: QueryResult = stmt.get();
 
     expect(result.result).toBe(2);
 
