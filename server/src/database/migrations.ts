@@ -7,7 +7,7 @@ const MIGRATIONS_DIR = path.join(__dirname, 'migrations');
 
 // Hard-coded migration content for in-memory databases
 // This avoids filesystem dependencies in test environments
-const IN_MEMORY_MIGRATIONS = {
+const IN_MEMORY_MIGRATIONS: Record<string, string> = {
   '001-initial-schema.sql': `
     -- This is just a placeholder migration file to demonstrate the migrations system.
     -- Our initial schema is already created by the createTables function in schema.ts.
