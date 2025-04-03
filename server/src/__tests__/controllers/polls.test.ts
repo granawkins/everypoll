@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { getPollById } from '../../controllers/polls';
 import { getRepositories } from '../../database';
+import { parse } from 'qs';
 
 // Mock the database repositories
 jest.mock('../../database', () => {
@@ -156,7 +157,8 @@ describe('Poll Controllers', () => {
 
     it('should include cross-referenced data when query params are provided', () => {
       // Set up query parameters for cross-reference
-      mockRequest.query = { p1: 'reference-poll-1', a1: 'ref1-answer1' };
+      // Parse the query string the same way Express would
+      mockRequest.query = parse('p1=reference-poll-1&a1=ref1-answer1');
 
       // Call the controller function
       getPollById(mockRequest as Request, mockResponse as Response);
@@ -184,12 +186,10 @@ describe('Poll Controllers', () => {
 
     it('should support multiple cross-references', () => {
       // Set up query parameters for multiple cross-references
-      mockRequest.query = {
-        p1: 'reference-poll-1',
-        a1: 'ref1-answer1',
-        p2: 'reference-poll-2',
-        a2: 'ref2-answer2',
-      };
+      // Parse the query string the same way Express would
+      mockRequest.query = parse(
+        'p1=reference-poll-1&a1=ref1-answer1&p2=reference-poll-2&a2=ref2-answer2'
+      );
 
       // Call the controller function
       getPollById(mockRequest as Request, mockResponse as Response);
@@ -216,7 +216,8 @@ describe('Poll Controllers', () => {
 
     it('should handle cross-references without answer IDs', () => {
       // Set up query parameters without answer ID
-      mockRequest.query = { p1: 'reference-poll-1' };
+      // Parse the query string the same way Express would
+      mockRequest.query = parse('p1=reference-poll-1');
 
       // Call the controller function
       getPollById(mockRequest as Request, mockResponse as Response);
@@ -237,7 +238,8 @@ describe('Poll Controllers', () => {
 
     it('should skip invalid poll references', () => {
       // Set up query parameters with non-existent poll
-      mockRequest.query = { p1: 'non-existent-poll' };
+      // Parse the query string the same way Express would
+      mockRequest.query = parse('p1=non-existent-poll');
 
       // Call the controller function
       getPollById(mockRequest as Request, mockResponse as Response);
@@ -252,7 +254,8 @@ describe('Poll Controllers', () => {
 
     it('should skip invalid answer references', () => {
       // Set up query parameters with invalid answer ID
-      mockRequest.query = { p1: 'reference-poll-1', a1: 'invalid-answer-id' };
+      // Parse the query string the same way Express would
+      mockRequest.query = parse('p1=reference-poll-1&a1=invalid-answer-id');
 
       // Call the controller function
       getPollById(mockRequest as Request, mockResponse as Response);
@@ -275,7 +278,8 @@ describe('Poll Controllers', () => {
       });
 
       // Set up query parameters
-      mockRequest.query = { p1: 'reference-poll-1', a1: 'ref1-answer1' };
+      // Parse the query string the same way Express would
+      mockRequest.query = parse('p1=reference-poll-1&a1=ref1-answer1');
 
       // Call the controller function
       getPollById(mockRequest as Request, mockResponse as Response);
@@ -290,12 +294,10 @@ describe('Poll Controllers', () => {
 
     it('should deduplicate cross-references with the same poll ID', () => {
       // Set up query parameters with duplicate poll IDs
-      mockRequest.query = {
-        p1: 'reference-poll-1',
-        a1: 'ref1-answer1',
-        p2: 'reference-poll-1', // Same poll ID as p1
-        a2: 'ref1-answer2',
-      };
+      // Parse the query string the same way Express would
+      mockRequest.query = parse(
+        'p1=reference-poll-1&a1=ref1-answer1&p2=reference-poll-1&a2=ref1-answer2'
+      );
 
       // Call the controller function
       getPollById(mockRequest as Request, mockResponse as Response);
@@ -314,7 +316,8 @@ describe('Poll Controllers', () => {
 
     it('should handle self-references gracefully', () => {
       // Set up query parameters with self-reference
-      mockRequest.query = { p1: 'test-poll-id', a1: 'answer1' };
+      // Parse the query string the same way Express would
+      mockRequest.query = parse('p1=test-poll-id&a1=answer1');
 
       // Call the controller function
       getPollById(mockRequest as Request, mockResponse as Response);
