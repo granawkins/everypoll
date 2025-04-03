@@ -5,6 +5,40 @@ import fs from 'fs';
 // Directory where migration files are stored
 const MIGRATIONS_DIR = path.join(__dirname, 'migrations');
 
+// Hard-coded migration content for in-memory databases
+// This avoids filesystem dependencies in test environments
+const IN_MEMORY_MIGRATIONS = {
+  '001-initial-schema.sql': `
+    -- This is just a placeholder migration file to demonstrate the migrations system.
+    -- Our initial schema is already created by the createTables function in schema.ts.
+    -- Future schema changes would be added here as new migration files.
+
+    -- If we wanted to add a new field to an existing table, we would create a new migration like:
+    -- ALTER TABLE users ADD COLUMN avatar_url TEXT;
+
+    -- Just a simple comment to make this file non-empty
+    -- This migration is already applied by the createTables function
+  `,
+  '002-update-user-oauth.sql': `
+    -- This migration adds a Google OAuth ID field to the users table
+    -- This allows linking user accounts to their Google profiles
+
+    -- First add the column without the UNIQUE constraint (SQLite limitation)
+    ALTER TABLE users ADD COLUMN google_id TEXT;
+
+    -- Then create a separate unique index for the column
+    CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id) WHERE google_id IS NOT NULL;
+  `,
+};
+
+/**
+ * Check if a database is in-memory
+ */
+function isInMemoryDatabase(db: Database.Database): boolean {
+  // Check if the database filename is ':memory:' which indicates an in-memory database
+  return db.name === ':memory:';
+}
+
 /**
  * Set up the migrations table if it doesn't exist
  */
@@ -30,7 +64,13 @@ function getAppliedMigrations(db: Database.Database): string[] {
 /**
  * Get list of all available migration files
  */
-function getAvailableMigrations(): string[] {
+function getAvailableMigrations(isInMemory: boolean): string[] {
+  if (isInMemory) {
+    // For in-memory databases, use the hardcoded list
+    return Object.keys(IN_MEMORY_MIGRATIONS).sort();
+  }
+
+  // For file-based databases, read from the filesystem
   // Create migrations directory if it doesn't exist
   if (!fs.existsSync(MIGRATIONS_DIR)) {
     fs.mkdirSync(MIGRATIONS_DIR, { recursive: true });
@@ -46,9 +86,22 @@ function getAvailableMigrations(): string[] {
 /**
  * Apply a single migration
  */
-function applyMigration(db: Database.Database, migrationName: string): void {
-  const migrationPath = path.join(MIGRATIONS_DIR, migrationName);
-  const migrationSql = fs.readFileSync(migrationPath, 'utf8');
+function applyMigration(
+  db: Database.Database,
+  migrationName: string,
+  isInMemory: boolean
+): void {
+  // Get migration SQL content - either from files or hardcoded
+  let migrationSql: string;
+
+  if (isInMemory) {
+    // Use hardcoded migration content for in-memory databases
+    migrationSql = IN_MEMORY_MIGRATIONS[migrationName];
+  } else {
+    // Read from file for regular databases
+    const migrationPath = path.join(MIGRATIONS_DIR, migrationName);
+    migrationSql = fs.readFileSync(migrationPath, 'utf8');
+  }
 
   try {
     // Start a transaction for the migration
@@ -79,8 +132,11 @@ function applyMigration(db: Database.Database, migrationName: string): void {
 export function runMigrations(db: Database.Database): void {
   setupMigrationsTable(db);
 
+  // Check if we're using an in-memory database
+  const isInMemory = isInMemoryDatabase(db);
+
   const appliedMigrations = getAppliedMigrations(db);
-  const availableMigrations = getAvailableMigrations();
+  const availableMigrations = getAvailableMigrations(isInMemory);
 
   // Find migrations that have not been applied yet
   const pendingMigrations = availableMigrations.filter(
@@ -96,7 +152,7 @@ export function runMigrations(db: Database.Database): void {
 
   // Apply each pending migration
   pendingMigrations.forEach((migration) => {
-    applyMigration(db, migration);
+    applyMigration(db, migration, isInMemory);
   });
 
   console.log('All migrations applied successfully');
