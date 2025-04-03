@@ -7,7 +7,6 @@ import {
   DbConnectionType,
 } from '../../../database';
 import * as jwtService from '../../../services/jwt';
-import { AlreadyVotedError } from '../../../errors';
 
 // Mock the JWT service
 jest.mock('../../../services/jwt', () => ({
@@ -148,7 +147,7 @@ describe('Poll Routes Integration', () => {
         });
 
       pollId = response.body.poll.id;
-      answerIds = response.body.answers.map((a: any) => a.id);
+      answerIds = response.body.answers.map((a: { id: string }) => a.id);
     });
 
     it('should return poll details', async () => {

@@ -45,8 +45,7 @@ export interface RepositoryOptions {
   keepConnectionOpen?: boolean;
 }
 
-// Repository cache to prevent creating multiple instances
-const repositoryCache = new Map<string, any>();
+// Repository instances could be cached here in the future if needed
 
 /**
  * Helper function to get repository instances

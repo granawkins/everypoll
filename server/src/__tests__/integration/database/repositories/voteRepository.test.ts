@@ -7,12 +7,9 @@ import {
 import { AlreadyVotedError } from '../../../../errors';
 
 describe('Vote Repository Integration', () => {
-  // Use a single in-memory database for all tests in this file
-  let db: any;
-
   // Set up the test database before all tests
   beforeAll(() => {
-    db = initializeTestDatabase(DbConnectionType.TestInMemory);
+    initializeTestDatabase(DbConnectionType.TestInMemory);
   });
 
   // Close connections after all tests

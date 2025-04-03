@@ -80,9 +80,9 @@ export class NotFoundError extends DatabaseError {
  */
 export class ValidationError extends DatabaseError {
   readonly field?: string;
-  readonly value?: any;
+  readonly value?: unknown;
 
-  constructor(message: string, field?: string, value?: any) {
+  constructor(message: string, field?: string, value?: unknown) {
     super(message);
     this.name = 'ValidationError';
     this.field = field;
@@ -111,8 +111,8 @@ export class AlreadyVotedError extends UniqueConstraintError {
  * Helper function to convert SQLite errors to our custom error types
  */
 export function convertSQLiteError(
-  error: any,
-  context?: Record<string, any>
+  error: unknown,
+  context?: Record<string, unknown>
 ): Error {
   if (!(error instanceof Error)) {
     return new DatabaseError('Unknown database error');
