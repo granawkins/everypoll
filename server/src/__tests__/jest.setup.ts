@@ -1,5 +1,8 @@
-// Set test environment variables if needed
+// Set test environment variables
 process.env.NODE_ENV = 'test';
 
-// Increase timeout for all tests (if needed)
+// Import cleanup to ensure it runs after all tests
+import './jest.cleanup';
+
+// Increase timeout for all tests
 jest.setTimeout(10000);

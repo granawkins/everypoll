@@ -7,15 +7,50 @@ import { runMigrations } from './migrations';
 // Database configuration
 const DB_DIRECTORY = path.join(__dirname, '../../../data');
 const DB_PATH = path.join(DB_DIRECTORY, 'everypoll.db');
-const TEST_DB_PATH = path.join(DB_DIRECTORY, 'everypoll.test.db');
+
+// Track open connections to ensure proper cleanup
+const openConnections: Database.Database[] = [];
+
+// Connection options
+export enum DbConnectionType {
+  Default = 'default', // Regular file-based DB
+  Test = 'test', // File-based test DB
+  TestInMemory = 'test-memory', // In-memory test DB
+  TestProcess = 'test-process', // Process-specific file-based test DB
+}
+
+/**
+ * Creates a connection URI for the specified connection type
+ */
+export function getDatabasePath(
+  type: DbConnectionType = DbConnectionType.Default
+): string {
+  switch (type) {
+    case DbConnectionType.Default:
+      return DB_PATH;
+    case DbConnectionType.Test:
+      return path.join(DB_DIRECTORY, 'everypoll.test.db');
+    case DbConnectionType.TestInMemory:
+      return ':memory:';
+    case DbConnectionType.TestProcess:
+      // Create a unique file name based on process ID to avoid conflicts in parallel tests
+      return path.join(DB_DIRECTORY, `everypoll.test.${process.pid}.db`);
+    default:
+      return DB_PATH;
+  }
+}
 
 /**
  * Initialize the database - creates the database file if it doesn't exist
  * and ensures the directory structure is in place
  */
-export function initializeDatabase(dbPath: string = DB_PATH): void {
-  // Create the data directory if it doesn't exist
-  if (!fs.existsSync(DB_DIRECTORY)) {
+export function initializeDatabase(
+  connectionType: DbConnectionType = DbConnectionType.Default
+): Database.Database {
+  const dbPath = getDatabasePath(connectionType);
+
+  // Create the data directory if it doesn't exist (for file-based DBs)
+  if (dbPath !== ':memory:' && !fs.existsSync(DB_DIRECTORY)) {
     fs.mkdirSync(DB_DIRECTORY, { recursive: true });
   }
 
@@ -25,42 +60,113 @@ export function initializeDatabase(dbPath: string = DB_PATH): void {
   // Set up the database schema
   createTables(db);
 
-  // Run any pending migrations
-  runMigrations(db);
+  // Run any pending migrations (skip for in-memory DBs in tests to speed things up)
+  if (connectionType === DbConnectionType.Default) {
+    runMigrations(db);
+  }
 
-  // Close the database connection
-  db.close();
+  if (connectionType !== DbConnectionType.Default) {
+    // Track non-default connections for cleanup
+    openConnections.push(db);
+  }
 
-  console.log(`Database initialized at ${dbPath}`);
+  // For in-memory databases, we must return the connection since
+  // closing it would destroy the database
+  if (dbPath === ':memory:') {
+    return db;
+  }
+
+  // For file-based databases, we can close the connection after initialization
+  if (connectionType === DbConnectionType.Default) {
+    db.close();
+    console.log(`Database initialized at ${dbPath}`);
+    return db;
+  }
+
+  console.log(`Test database initialized at ${dbPath}`);
+  return db;
 }
 
 /**
  * Get a database connection
- * @param test If true, returns a connection to the test database
+ * @param connectionType Type of database connection to create
  * @returns A SQLite database connection
  */
-export function getConnection(test: boolean = false): Database.Database {
-  const dbPath = test ? TEST_DB_PATH : DB_PATH;
+export function getConnection(
+  connectionType: DbConnectionType = DbConnectionType.Default
+): Database.Database {
+  const dbPath = getDatabasePath(connectionType);
 
-  // Initialize the database if it doesn't exist
-  if (!fs.existsSync(dbPath)) {
-    initializeDatabase(dbPath);
+  // For in-memory databases, we always need to initialize
+  if (dbPath === ':memory:') {
+    return initializeDatabase(connectionType);
   }
 
-  return new Database(dbPath);
+  // For file-based databases, initialize if it doesn't exist
+  if (!fs.existsSync(dbPath) && dbPath !== ':memory:') {
+    initializeDatabase(connectionType);
+  }
+
+  const db = new Database(dbPath);
+
+  // Track non-default connections for cleanup
+  if (connectionType !== DbConnectionType.Default) {
+    openConnections.push(db);
+  }
+
+  return db;
 }
 
 /**
- * Initialize the test database - creates a fresh test database
+ * Initialize a test database with the specified connection type
  */
-export function initializeTestDatabase(): void {
-  // Delete the test database if it exists
-  if (fs.existsSync(TEST_DB_PATH)) {
-    fs.unlinkSync(TEST_DB_PATH);
+export function initializeTestDatabase(
+  connectionType: DbConnectionType = DbConnectionType.TestInMemory
+): Database.Database {
+  const dbPath = getDatabasePath(connectionType);
+
+  // For file-based test databases, remove existing file if it exists
+  if (dbPath !== ':memory:' && fs.existsSync(dbPath)) {
+    fs.unlinkSync(dbPath);
   }
 
   // Initialize a fresh test database
-  initializeDatabase(TEST_DB_PATH);
+  return initializeDatabase(connectionType);
+}
 
-  console.log('Test database initialized');
+/**
+ * Close all open database connections
+ */
+export function closeAllConnections(): void {
+  openConnections.forEach((db) => {
+    try {
+      if (db && !db.closed) {
+        db.close();
+      }
+    } catch (error) {
+      console.error('Error closing database connection:', error);
+    }
+  });
+
+  // Clear the connections array
+  openConnections.length = 0;
+}
+
+/**
+ * Close specific database connection
+ */
+export function closeConnection(db: Database.Database): void {
+  try {
+    if (db && !db.closed) {
+      db.close();
+    }
+  } catch (error) {
+    console.error('Error closing database connection:', error);
+  }
+
+  // Remove from connections array
+  const index = openConnections.indexOf(db);
+  if (index !== -1) {
+    openConnections.splice(index, 1);
+  }
 }

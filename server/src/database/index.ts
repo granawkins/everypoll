@@ -2,6 +2,9 @@ import {
   getConnection,
   initializeDatabase,
   initializeTestDatabase,
+  closeAllConnections,
+  closeConnection,
+  DbConnectionType,
 } from './connection';
 import { UserRepository } from './repositories/userRepository';
 import { PollRepository } from './repositories/pollRepository';
@@ -22,18 +25,77 @@ if (process.env.NODE_ENV !== 'test') {
 export type { User, Poll, Answer, Vote };
 
 // Export database connection functions
-export { getConnection, initializeDatabase, initializeTestDatabase };
+export {
+  getConnection,
+  initializeDatabase,
+  initializeTestDatabase,
+  closeAllConnections,
+  closeConnection,
+  DbConnectionType,
+};
 
 // Export repository classes
 export { UserRepository, PollRepository, VoteRepository };
 
-// Helper function to get repository instances
-export function getRepositories(test: boolean = false) {
-  const db = getConnection(test);
+/**
+ * Options for repository initialization
+ */
+export interface RepositoryOptions {
+  connectionType?: DbConnectionType;
+  keepConnectionOpen?: boolean;
+}
+
+// Repository cache to prevent creating multiple instances
+const repositoryCache = new Map<string, any>();
+
+/**
+ * Helper function to get repository instances
+ * @param options Configuration options for repositories
+ * @returns Repository instances and database connection
+ */
+export function getRepositories(options: RepositoryOptions | boolean = {}) {
+  // Handle legacy boolean parameter (for backward compatibility)
+  if (typeof options === 'boolean') {
+    options = {
+      connectionType: options
+        ? DbConnectionType.Test
+        : DbConnectionType.Default,
+    };
+  } else {
+    // Set defaults for options
+    options = {
+      connectionType: DbConnectionType.Default,
+      keepConnectionOpen: false,
+      ...options,
+    };
+  }
+
+  const { connectionType, keepConnectionOpen } = options as RepositoryOptions;
+
+  // For in-memory databases, we always need to keep the connection open
+  const shouldKeepOpen =
+    keepConnectionOpen || connectionType === DbConnectionType.TestInMemory;
+
+  // Get connection based on connection type
+  const db = getConnection(connectionType);
+
+  // Create repositories with the database connection
+  const userRepository = new UserRepository(db);
+  const pollRepository = new PollRepository(db);
+  const voteRepository = new VoteRepository(db);
+
+  // Create a cleanup function that will close the connection if needed
+  const cleanup = () => {
+    if (!shouldKeepOpen) {
+      closeConnection(db);
+    }
+  };
+
   return {
-    userRepository: new UserRepository(db),
-    pollRepository: new PollRepository(db),
-    voteRepository: new VoteRepository(db),
-    db, // Export the database connection for direct use if needed
+    userRepository,
+    pollRepository,
+    voteRepository,
+    db,
+    cleanup,
   };
 }
