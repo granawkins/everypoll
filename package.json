@@ -8,7 +8,8 @@
     "start": "npm start --prefix server",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "test": "npm test --prefix client && npm test --prefix server"
+    "test": "npm test --prefix client && npm test --prefix server",
+    "test:ci": "npm test --prefix client && npm run test:ci --prefix server"
   },
   "devDependencies": {
     "@eslint/js": "^9.23.0",
