@@ -240,7 +240,7 @@ describe('Database Tests', () => {
       // Second vote should fail
       expect(() => {
         voteRepository.create(user.id, poll.id, answers[1].id);
-      }).toThrow('User has already voted on this poll');
+      }).toThrow(/User has already voted on this poll/);
 
       // Check if user has voted
       expect(voteRepository.hasVoted(user.id, poll.id)).toBe(true);
