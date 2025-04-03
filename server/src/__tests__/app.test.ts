@@ -1,12 +1,14 @@
 import request from 'supertest';
-import { app } from '../app';
+import { createApp, CLIENT_DIST_PATH } from '../app';
 import fs from 'fs';
 import path from 'path';
-import { CLIENT_DIST_PATH } from '../app';
+
+// Create test app instance
+const testApp = createApp();
 
 describe('API Endpoints', () => {
   it('should return welcome message on GET /api', async () => {
-    const response = await request(app).get('/api');
+    const response = await request(testApp).get('/api');
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty('message');
@@ -14,7 +16,7 @@ describe('API Endpoints', () => {
   });
 
   it('should attempt to serve the React app on GET /', async () => {
-    const response = await request(app).get('/');
+    const response = await request(testApp).get('/');
 
     // Check if the client/dist directory exists
     const clientDistExists =

@@ -1,9 +1,12 @@
 import request from 'supertest';
-import { app } from '../../app';
+import { createApp } from '../../app';
 import * as jwtService from '../../services/jwt';
 import * as googleConfig from '../../services/google/config';
 import * as googleAuth from '../../services/google/auth';
 import { getRepositories } from '../../database';
+
+// Create test app instance
+const testApp = createApp();
 
 // Mock the JWT service
 jest.mock('../../services/jwt', () => ({
@@ -128,7 +131,7 @@ describe('Auth Routes', () => {
 
   describe('GET /api/auth/me', () => {
     it('should return anonymous user if no JWT cookie', async () => {
-      const response = await request(app).get('/api/auth/me');
+      const response = await request(testApp).get('/api/auth/me');
 
       expect(response.status).toBe(200);
       expect(response.body.isAuthenticated).toBe(false);
@@ -145,7 +148,7 @@ describe('Auth Routes', () => {
         userId: 'test-user-id',
       });
 
-      const response = await request(app)
+      const response = await request(testApp)
         .get('/api/auth/me')
         .set('Cookie', ['auth_token=test-jwt-token']);
 
@@ -158,14 +161,14 @@ describe('Auth Routes', () => {
 
   describe('POST /api/auth/login', () => {
     it('should return 400 if email not provided', async () => {
-      const response = await request(app).post('/api/auth/login').send({});
+      const response = await request(testApp).post('/api/auth/login').send({});
 
       expect(response.status).toBe(400);
       expect(response.body.error).toBe('Email is required');
     });
 
     it('should login existing user and set cookie', async () => {
-      const response = await request(app)
+      const response = await request(testApp)
         .post('/api/auth/login')
         .send({ email: 'test@example.com' });
 
@@ -185,7 +188,7 @@ describe('Auth Routes', () => {
       const { userRepository } = getRepositories();
       (userRepository.getByEmail as jest.Mock).mockReturnValueOnce(null);
 
-      const response = await request(app)
+      const response = await request(testApp)
         .post('/api/auth/login')
         .send({ email: 'new@example.com', name: 'New User' });
 
@@ -200,7 +203,7 @@ describe('Auth Routes', () => {
 
   describe('POST /api/auth/logout', () => {
     it('should clear auth cookie', async () => {
-      const response = await request(app).post('/api/auth/logout');
+      const response = await request(testApp).post('/api/auth/logout');
 
       expect(response.status).toBe(200);
       expect(response.body.message).toBe('Logged out successfully');
@@ -213,7 +216,7 @@ describe('Auth Routes', () => {
 
   describe('GET /api/auth/google', () => {
     it('should set state cookie and redirect to Google auth URL', async () => {
-      const response = await request(app).get('/api/auth/google');
+      const response = await request(testApp).get('/api/auth/google');
 
       // Check status code for redirect
       expect(response.status).toBe(302);
@@ -251,7 +254,7 @@ describe('Auth Routes', () => {
     });
 
     it('should redirect with error if state is missing', async () => {
-      const response = await request(app).get(
+      const response = await request(testApp).get(
         '/api/auth/google/callback?code=test-code'
       );
 
@@ -260,7 +263,7 @@ describe('Auth Routes', () => {
     });
 
     it('should redirect with error if state does not match', async () => {
-      const response = await request(app)
+      const response = await request(testApp)
         .get('/api/auth/google/callback?code=test-code&state=invalid-state')
         .set('Cookie', ['oauth_state=valid-state']);
 
@@ -269,7 +272,7 @@ describe('Auth Routes', () => {
     });
 
     it('should redirect with error if code is missing', async () => {
-      const response = await request(app)
+      const response = await request(testApp)
         .get('/api/auth/google/callback?state=test-state')
         .set('Cookie', ['oauth_state=test-state']);
 
@@ -289,7 +292,7 @@ describe('Auth Routes', () => {
       (userRepository.getByEmail as jest.Mock).mockReturnValueOnce(null);
 
       // Create a successful response
-      const response = await request(app)
+      const response = await request(testApp)
         .get('/api/auth/google/callback?code=test-code&state=test-state')
         .set('Cookie', ['oauth_state=test-state']);
 
@@ -338,7 +341,7 @@ describe('Auth Routes', () => {
       );
 
       // Send request and ignore response since we're just checking the update was called
-      await request(app)
+      await request(testApp)
         .get('/api/auth/google/callback?code=test-code&state=test-state')
         .set('Cookie', ['oauth_state=test-state']);
 
@@ -359,7 +362,7 @@ describe('Auth Routes', () => {
         new Error('API error')
       );
 
-      const errorResponse = await request(app)
+      const errorResponse = await request(testApp)
         .get('/api/auth/google/callback?code=test-code&state=test-state')
         .set('Cookie', ['oauth_state=test-state']);
 

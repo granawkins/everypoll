@@ -1,5 +1,5 @@
 import request from 'supertest';
-import { app } from '../../app';
+import { createApp } from '../../app';
 import { getRepositories } from '../../database';
 import * as jwtService from '../../services/jwt';
 import {
@@ -7,6 +7,9 @@ import {
   AlreadyVotedError,
   PollAnswerCountError,
 } from '../../errors';
+
+// Create a test app instance
+const testApp = createApp();
 
 // Mock the JWT service
 jest.mock('../../services/jwt', () => ({
@@ -154,7 +157,7 @@ describe('Poll Routes', () => {
   describe('POST /api/polls', () => {
     it('should require authentication', async () => {
       // Send request without auth token
-      const response = await request(app)
+      const response = await request(testApp)
         .post('/api/polls')
         .send({
           question: 'Test poll?',
@@ -171,7 +174,7 @@ describe('Poll Routes', () => {
         userId: 'test-user-id',
       });
 
-      const response = await request(app)
+      const response = await request(testApp)
         .post('/api/polls')
         .set('Cookie', ['auth_token=test-jwt-token'])
         .send({
@@ -202,7 +205,7 @@ describe('Poll Routes', () => {
         userId: 'test-user-id',
       });
 
-      const response = await request(app)
+      const response = await request(testApp)
         .post('/api/polls')
         .set('Cookie', ['auth_token=test-jwt-token'])
         .send({
@@ -221,7 +224,7 @@ describe('Poll Routes', () => {
         userId: 'test-user-id',
       });
 
-      const response = await request(app)
+      const response = await request(testApp)
         .post('/api/polls')
         .set('Cookie', ['auth_token=test-jwt-token'])
         .send({
@@ -252,7 +255,7 @@ describe('Poll Routes', () => {
         userId: 'test-user-id',
       });
 
-      const response = await request(app)
+      const response = await request(testApp)
         .post('/api/polls')
         .set('Cookie', ['auth_token=test-jwt-token'])
         .send({
@@ -271,7 +274,7 @@ describe('Poll Routes', () => {
         userId: 'test-user-id',
       });
 
-      const response = await request(app)
+      const response = await request(testApp)
         .get('/api/polls/test-poll-id')
         .set('Cookie', ['auth_token=test-jwt-token']);
 
@@ -292,7 +295,7 @@ describe('Poll Routes', () => {
     });
 
     it('should work without authentication', async () => {
-      const response = await request(app).get('/api/polls/test-poll-id');
+      const response = await request(testApp).get('/api/polls/test-poll-id');
 
       expect(response.status).toBe(200);
       expect(response.body).toHaveProperty('poll');
@@ -301,7 +304,9 @@ describe('Poll Routes', () => {
     });
 
     it('should return 404 for non-existent poll', async () => {
-      const response = await request(app).get('/api/polls/non-existent-poll');
+      const response = await request(testApp).get(
+        '/api/polls/non-existent-poll'
+      );
 
       expect(response.status).toBe(404);
       expect(response.body).toHaveProperty('error');
@@ -310,7 +315,7 @@ describe('Poll Routes', () => {
 
   describe('POST /api/polls/:id/vote', () => {
     it('should require authentication', async () => {
-      const response = await request(app)
+      const response = await request(testApp)
         .post('/api/polls/test-poll-id/vote')
         .send({
           answerId: 'answer1',
@@ -326,7 +331,7 @@ describe('Poll Routes', () => {
         userId: 'test-user-id',
       });
 
-      const response = await request(app)
+      const response = await request(testApp)
         .post('/api/polls/test-poll-id/vote')
         .set('Cookie', ['auth_token=test-jwt-token'])
         .send({
@@ -354,7 +359,7 @@ describe('Poll Routes', () => {
         userId: 'test-user-id',
       });
 
-      const response = await request(app)
+      const response = await request(testApp)
         .post('/api/polls/test-poll-id/vote')
         .set('Cookie', ['auth_token=test-jwt-token'])
         .send({});
@@ -369,7 +374,7 @@ describe('Poll Routes', () => {
         userId: 'test-user-id',
       });
 
-      const response = await request(app)
+      const response = await request(testApp)
         .post('/api/polls/non-existent-poll/vote')
         .set('Cookie', ['auth_token=test-jwt-token'])
         .send({
@@ -386,7 +391,7 @@ describe('Poll Routes', () => {
         userId: 'test-user-id',
       });
 
-      const response = await request(app)
+      const response = await request(testApp)
         .post('/api/polls/test-poll-id/vote')
         .set('Cookie', ['auth_token=test-jwt-token'])
         .send({
@@ -410,7 +415,7 @@ describe('Poll Routes', () => {
         { id: 'answer2', poll_id: 'test-poll-id', text: 'Answer 2' },
       ]);
 
-      const response = await request(app)
+      const response = await request(testApp)
         .post('/api/polls/test-poll-id/vote')
         .set('Cookie', ['auth_token=test-jwt-token'])
         .send({

@@ -1,11 +1,13 @@
-import { app } from '../app';
+import { createApp } from '../app';
 import { Server } from 'http';
+
+const testApp = createApp();
 
 let server: Server;
 
 // Setup before tests
 beforeAll((done) => {
-  server = app.listen(0, () => {
+  server = testApp.listen(0, () => {
     done();
   });
 });
