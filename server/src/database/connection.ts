@@ -18,7 +18,7 @@ function isConnectionClosed(db: Database.Database): boolean {
     // Try to execute a simple pragma query - will throw if connection is closed
     db.pragma('schema_version');
     return false;
-  } catch (_) {
+  } catch {
     // If query throws, the connection is closed
     return true;
   }
