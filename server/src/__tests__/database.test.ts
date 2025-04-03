@@ -237,10 +237,18 @@ describe('Database Tests', () => {
       // First vote should succeed
       voteRepository.create(user.id, poll.id, answers[0].id);
 
-      // Second vote should fail
-      expect(() => {
+      // Second vote should fail - use direct try/catch instead of Jest's toThrow matcher
+      let errorThrown = false;
+      let errorMessage = '';
+      try {
         voteRepository.create(user.id, poll.id, answers[1].id);
-      }).toThrow(/User has already voted on this poll/);
+      } catch (error) {
+        errorThrown = true;
+        errorMessage = error instanceof Error ? error.message : String(error);
+      }
+      // Verify both that an error was thrown and it has the right message
+      expect(errorThrown).toBe(true);
+      expect(errorMessage).toMatch(/User has already voted on this poll/);
 
       // Check if user has voted
       expect(voteRepository.hasVoted(user.id, poll.id)).toBe(true);
