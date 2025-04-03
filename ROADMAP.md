@@ -175,6 +175,15 @@ The roadmap is divided into two phases:
 - Multiple levels of cross-referencing should work (nested references)
 - Invalid cross-reference parameters should return appropriate errors
 
+**Implementation Insights:**
+
+- **Query Parameter Structure**: Using p1/a1, p2/a2 pattern provides a flexible way to specify multiple cross-references while keeping the API straightforward
+- **Response Format**: Cross-reference data should include full poll details, answers, and selected answer information to minimize additional API calls from the frontend
+- **Validation Strategy**: Implement validation in layers - first check if polls exist, then if answers belong to those polls
+- **Error Tolerance**: Design cross-referencing to gracefully skip invalid references rather than failing the entire request
+- **Database Efficiency**: The JOIN query pattern used in cross-referencing is efficient for moderately sized datasets, but might need indexing for very large datasets
+- **Deduplication**: Implement safeguards to prevent duplicate cross-references to the same poll
+
 ### PR 7: Feed and Search Routes
 
 **Summary:** Create endpoints for the poll feed and search functionality.
